@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: samsung-ac-controller
+    name: smartac-controller
     runtime: node
     buildCommand: npm install
     startCommand: node server.js
@@ -8,3 +8,5 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "10000"
