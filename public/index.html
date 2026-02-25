@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0e27">
+<title>Samsung AC · Smart Night Mode</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: linear-gradient(160deg, #f0f4f8 0%, #e2e8f0 40%, #cbd5e1 100%);
+    --card-bg: rgba(255,255,255,0.85);
+    --card-border: rgba(0,0,0,0.06);
+    --card-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    --text: #1e293b;
+    --text-dim: #64748b;
+    --accent: #8b5cf6;
+    --accent-glow: rgba(99,102,241,0.4);
+    --stat-bg: rgba(0,0,0,0.03);
+    --input-bg: #fff;
+    --input-border: #cbd5e1;
+    --outline-border: #cbd5e1;
+    --outline-text: #475569;
+    --dim-border: rgba(0,0,0,0.04);
+  }
+  body.night {
+    --bg: linear-gradient(160deg, #0a0e27 0%, #1a1040 40%, #0d1b2a 100%);
+    --card-bg: rgba(255,255,255,0.06);
+    --card-border: rgba(255,255,255,0.08);
+    --card-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #a78bfa;
+    --stat-bg: rgba(255,255,255,0.05);
+    --input-bg: rgba(255,255,255,0.08);
+    --input-border: rgba(255,255,255,0.15);
+    --outline-border: rgba(255,255,255,0.2);
+    --outline-text: #e2e8f0;
+    --dim-border: rgba(255,255,255,0.05);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 0 16px 40px;
+    transition: background 0.8s ease, color 0.4s ease;
+  }
+  .card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 24px;
+    margin: 16px auto;
+    max-width: 440px;
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    transition: all 0.5s ease;
+  }
+  .card.active-night {
+    border: 2px solid rgba(139,92,246,0.4);
+    background: linear-gradient(160deg, rgba(139,92,246,0.12), rgba(99,102,241,0.06));
+  }
+  input, select {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: var(--accent); }
+  .btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; box-shadow: 0 4px 15px var(--accent-glow); }
+  .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
+  .btn-outline { background: transparent; border: 1px solid var(--outline-border); color: var(--outline-text); }
+  .btn-on { background: #22c55e; color: #fff; }
+  .btn-off { background: #ef4444; color: #fff; }
+  .label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; display: block; margin-bottom: 2px; }
+  .stat-box { text-align: center; padding: 12px 8px; border-radius: 14px; background: var(--stat-bg); flex: 1; transition: background 0.4s; }
+  .stat-val { font-size: 22px; font-weight: 800; }
+  .stat-label { font-size: 11px; opacity: 0.5; margin-top: 2px; }
+  .preset {
+    padding: 16px; border-radius: 14px;
+    border: 1px solid var(--outline-border);
+    cursor: pointer; transition: all 0.2s;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+  }
+  .preset:hover { border-color: rgba(139,92,246,0.4); }
+  .preset.selected { border: 2px solid #8b5cf6; background: rgba(139,92,246,0.1); }
+  .tag { font-size: 11px; padding: 4px 10px; border-radius: 8px; background: var(--stat-bg); font-weight: 600; display: inline-block; margin: 2px; }
+  .mode-btn {
+    padding: 6px 14px; font-size: 12px; border-radius: 10px;
+    border: 1px solid var(--outline-border); background: transparent;
+    color: var(--text); cursor: pointer; font-weight: 600;
+    font-family: 'DM Sans'; transition: all 0.15s;
+  }
+  .mode-btn:hover { border-color: rgba(139,92,246,0.5); }
+  .mode-btn.active { background: rgba(139,92,246,0.2); border-color: #8b5cf6; color: #8b5cf6; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+  }
+  .status-badge.on { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .status-badge.off { background: rgba(239,68,68,0.12); color: #ef4444; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .status-badge.on .status-dot { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+  .status-badge.off .status-dot { background: #ef4444; }
+  .log-entry { padding: 6px 0; border-bottom: 1px solid var(--dim-border); font-size: 12px; font-family: 'DM Mono', monospace; }
+  .log-time { opacity: 0.4; margin-right: 8px; }
+  .flex { display: flex; } .gap-8 { gap: 8px; } .gap-6 { gap: 6px; }
+  .w-full { width: 100%; } .flex-wrap { flex-wrap: wrap; }
+  .mb-16 { margin-bottom: 16px; } .mt-16 { margin-top: 16px; }
+  .mt-8 { margin-top: 8px; } .mt-6 { margin-top: 6px; }
+  .text-center { text-align: center; } .flex-1 { flex: 1; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .pulse { animation: pulse 2s infinite; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.3s ease-out; }
+  .ambient-glow {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(139,92,246,0.08), transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+  .header-gradient {
+    font-size: 28px; font-weight: 800; letter-spacing: -1px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  body.night .header-gradient {
+    background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6);
+    -webkit-background-clip: text; background-clip: text;
+  }
+  .temp-display { font-size: 28px; font-weight: 800; text-align: center; flex: 1; }
+  input[type="time"] { font-size: 16px; padding: 8px 12px; }
+  body.night input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+  a { color: var(--accent); }
+
+  /* Loading spinner */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%; border-top-color: #fff; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Sending overlay on night button */
+  .sending-steps { margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--stat-bg); font-size: 12px; font-family: 'DM Mono', monospace; }
+  .step-done { color: #22c55e; } .step-active { color: var(--accent); } .step-pending { opacity: 0.3; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ═══════════════════════════════════════════════
+//  Samsung AC Smart Night Mode Controller
+//  Uses /api/* proxy to bypass CORS
+// ═══════════════════════════════════════════════
+
+const PRESETS = {
+  ultraSaver: { name: "Ultra Saver", desc: "Max savings · 25°C · WindFree Sleep · Low fan", icon: "🌙", temp: 25, mode: "cool", fan: "low", optional: "windFreeSleep", swing: "off" },
+  balanced:   { name: "Balanced",    desc: "Comfort + savings · 24°C · Quiet · Auto fan", icon: "⚖️", temp: 24, mode: "cool", fan: "auto", optional: "quiet", swing: "off" },
+  comfort:    { name: "Comfort First", desc: "Cooler · 23°C · WindFree · Horizontal swing", icon: "❄️", temp: 23, mode: "cool", fan: "auto", optional: "windFree", swing: "horizontal" },
+};
+
+const state = {
+  token: localStorage.getItem("st_token") || "",
+  deviceId: localStorage.getItem("st_device") || "",
+  devices: [],
+  status: null,
+  page: localStorage.getItem("st_token") && localStorage.getItem("st_device") ? "dashboard" : "setup",
+  nightMode: false,
+  selectedPreset: localStorage.getItem("st_preset") || "balanced",
+  actionLog: [],
+  bedtime: localStorage.getItem("st_bedtime") || "22:00",
+  wakeTime: localStorage.getItem("st_wake") || "06:00",
+  autoSchedule: false,
+  sending: false,
+  sendingStep: "",
+  loading: false,
+  error: "",
+  showManual: false,
+  customTemp: 24,
+  pollTimer: null,
+  schedTimer: null,
+};
+
+function save() {
+  localStorage.setItem("st_token", state.token);
+  localStorage.setItem("st_device", state.deviceId);
+  localStorage.setItem("st_bedtime", state.bedtime);
+  localStorage.setItem("st_wake", state.wakeTime);
+  localStorage.setItem("st_preset", state.selectedPreset);
+}
+
+function log(msg) {
+  state.actionLog.unshift({ time: new Date().toLocaleTimeString(), msg });
+  if (state.actionLog.length > 30) state.actionLog.length = 30;
+  render();
+}
+
+// ─── API calls go through our /api proxy ───
+async function apiCall(method, path, body) {
+  const opts = {
+    method,
+    headers: { Authorization: `Bearer ${state.token}`, "Content-Type": "application/json" },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(`/api${path}`, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
+  return data;
+}
+
+async function sendCmd(capability, command, args, label) {
+  state.sending = true; state.sendingStep = label; render();
+  try {
+    await apiCall("POST", `/devices/${state.deviceId}/commands`, {
+      commands: [{ component: "main", capability, command, arguments: args }],
+    });
+    log(`✓ ${label}`);
+    setTimeout(fetchStatus, 1500);
+  } catch (e) { log(`✗ ${label}: ${e.message}`); }
+  state.sending = false; state.sendingStep = ""; render();
+}
+
+async function fetchDevices() {
+  state.loading = true; state.error = ""; render();
+  try {
+    const data = await apiCall("GET", "/devices");
+    state.devices = (data.items || []).filter(d =>
+      d.components?.[0]?.capabilities?.some(c =>
+        c.id === "airConditionerMode" || c.id === "thermostatCoolingSetpoint" || c.id === "switch"
+      )
+    );
+    if (state.devices.length === 0) state.error = "No AC devices found. Make sure your AC is in SmartThings app and your token has Device permissions.";
+    else if (state.devices.length === 1) state.deviceId = state.devices[0].deviceId;
+    log(`Found ${state.devices.length} AC device(s)`);
+    save();
+  } catch (e) {
+    state.error = `API Error: ${e.message}`;
+    if (e.message.includes("401")) state.error += " — Token may be invalid or expired.";
+  }
+  state.loading = false; render();
+}
+
+async function fetchStatus() {
+  if (!state.deviceId || !state.token) return;
+  try {
+    state.status = await apiCall("GET", `/devices/${state.deviceId}/status`);
+    const t = state.status?.components?.main?.thermostatCoolingSetpoint?.coolingSetpoint?.value;
+    if (t) state.customTemp = t;
+    render();
+  } catch (e) { console.error("Status fetch:", e); }
+}
+
+function getParsed() {
+  const s = state.status;
+  if (!s) return null;
+  const m = s.components?.main;
+  if (!m) return null;
+  return {
+    on: m?.switch?.switch?.value === "on",
+    temp: m?.temperatureMeasurement?.temperature?.value,
+    targetTemp: m?.thermostatCoolingSetpoint?.coolingSetpoint?.value,
+    humidity: m?.relativeHumidityMeasurement?.humidity?.value,
+    mode: m?.airConditionerMode?.airConditionerMode?.value,
+    fan: m?.airConditionerFanMode?.fanMode?.value,
+    optionalMode: m?.["custom.airConditionerOptionalMode"]?.acOptionalMode?.value,
+    swing: m?.fanOscillationMode?.fanOscillationMode?.value,
+  };
+}
+
+async function activateNightMode() {
+  const preset = PRESETS[state.selectedPreset];
+  state.sending = true; state.nightMode = true;
+  document.body.classList.add("night");
+  render();
+  log(`🌙 Activating Night Mode: ${preset.name}`);
+
+  const steps = [
+    ["switch", "on", [], "Turn ON"],
+    ["airConditionerMode", "setAirConditionerMode", [preset.mode], `Mode → ${preset.mode}`],
+    ["thermostatCoolingSetpoint", "setCoolingSetpoint", [preset.temp], `Temp → ${preset.temp}°C`],
+    ["airConditionerFanMode", "setFanMode", [preset.fan], `Fan → ${preset.fan}`],
+    ["custom.airConditionerOptionalMode", "setAcOptionalMode", [preset.optional], `${preset.optional}`],
+    ["fanOscillationMode", "setFanOscillationMode", [preset.swing], `Swing → ${preset.swing}`],
+  ];
+
+  try {
+    for (const [cap, cmd, args, label] of steps) {
+      state.sendingStep = label; render();
+      await apiCall("POST", `/devices/${state.deviceId}/commands`, {
+        commands: [{ component: "main", capability: cap, command: cmd, arguments: args }],
+      });
+      log(`✓ ${label}`);
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    log("🌙 Night Mode ACTIVE — Sweet dreams!");
+    setTimeout(fetchStatus, 2000);
+  } catch (e) {
+    log(`✗ Error: ${e.message}`);
+    state.nightMode = false;
+    document.body.classList.remove("night");
+  }
+  state.sending = false; state.sendingStep = ""; render();
+}
+
+async function deactivateNightMode() {
+  state.sending = true; state.sendingStep = "Turning off..."; render();
+  try {
+    await apiCall("POST", `/devices/${state.deviceId}/commands`, {
+      commands: [{ component: "main", capability: "switch", command: "off", arguments: [] }],
+    });
+    log("☀️ Night Mode OFF — AC turned off");
+    state.nightMode = false;
+    document.body.classList.remove("night");
+    setTimeout(fetchStatus, 1500);
+  } catch (e) { log(`✗ Error: ${e.message}`); }
+  state.sending = false; state.sendingStep = ""; render();
+}
+
+function startScheduleCheck() {
+  if (state.schedTimer) clearInterval(state.schedTimer);
+  if (!state.autoSchedule || !state.deviceId) return;
+  state.schedTimer = setInterval(() => {
+    const now = new Date();
+    const t = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    if (t === state.bedtime && !state.nightMode) { log("⏰ Scheduled bedtime — activating"); activateNightMode(); }
+    if (t === state.wakeTime && state.nightMode) { log("⏰ Wake time — deactivating"); deactivateNightMode(); }
+  }, 30000);
+}
+
+function goToDashboard() {
+  state.page = "dashboard"; save(); render();
+  fetchStatus();
+  if (state.pollTimer) clearInterval(state.pollTimer);
+  state.pollTimer = setInterval(fetchStatus, 12000);
+}
+
+// ═══════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════
+
+function render() {
+  const app = document.getElementById("app");
+  if (state.page === "setup") renderSetup(app);
+  else renderDashboard(app);
+}
+
+function renderSetup(el) {
+  el.innerHTML = `
+    <div style="text-align:center;padding:32px 0 16px">
+      <div style="font-size:48px;margin-bottom:8px">❄️</div>
+      <h1 class="header-gradient">Samsung AC Controller</h1>
+      <p style="font-size:13px;opacity:0.6;margin-top:6px">Smart Night Mode · AR18CYLANWKN</p>
+    </div>
+
+    <div class="card fade-in">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">Setup Connection</h3>
+      <p style="font-size:13px;opacity:0.6;margin-bottom:16px">Connect via SmartThings Cloud API</p>
+
+      <label class="label">Step 1 — Personal Access Token</label>
+      <p style="font-size:12px;opacity:0.5;margin:2px 0 4px">
+        Get from <a href="https://account.smartthings.com/tokens" target="_blank">account.smartthings.com/tokens</a> — grant full device access
+      </p>
+      <input id="tokenInput" type="password" placeholder="Paste your token here..." value="${state.token}">
+
+      <button class="btn btn-primary w-full mt-16" id="findBtn" ${!state.token || state.loading ? "disabled" : ""}>
+        ${state.loading ? '<span class="spinner"></span>Searching...' : '🔍 Find My AC'}
+      </button>
+
+      ${state.error ? `<p style="color:#ef4444;font-size:13px;margin-top:12px;line-height:1.5">${state.error}</p>` : ""}
+
+      ${state.devices.length > 0 ? `
+        <div class="mt-16 fade-in">
+          <label class="label">Step 2 — Select Your AC</label>
+          ${state.devices.map(d => `
+            <div class="preset ${state.deviceId === d.deviceId ? 'selected' : ''}" data-did="${d.deviceId}">
+              <span style="font-size:28px">🌀</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:700;font-size:14px">${d.label || d.name}</div>
+                <div style="font-size:11px;opacity:0.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.deviceId}</div>
+                <div style="font-size:10px;opacity:0.35;margin-top:2px">${(d.components?.[0]?.capabilities || []).map(c => c.id).filter(c => !c.includes('ocf') && !c.includes('health')).join(' · ')}</div>
+              </div>
+            </div>
+          `).join("")}
+          <button class="btn btn-primary w-full mt-8" id="launchBtn" ${!state.deviceId ? "disabled" : ""}>🚀 Launch Dashboard</button>
+        </div>
+      ` : ""}
+
+      <div style="margin-top:20px;border-top:1px solid var(--outline-border);padding-top:16px">
+        <label class="label">Or enter Device ID manually</label>
+        <input id="manualDevice" placeholder="Device UUID..." value="${state.deviceId}">
+        <button class="btn btn-outline w-full mt-8" id="skipBtn" ${!state.deviceId || !state.token ? "disabled" : ""}>Skip to Dashboard →</button>
+      </div>
+    </div>
+
+    <div class="card" style="opacity:0.7">
+      <h4 style="font-size:14px;margin-bottom:8px">📖 Quick Setup Guide</h4>
+      <ol style="padding-left:20px;font-size:13px;line-height:1.9">
+        <li>Make sure your AC is connected in the <b>Samsung SmartThings</b> phone app</li>
+        <li>Open <a href="https://account.smartthings.com/tokens" target="_blank">SmartThings Token Page</a></li>
+        <li>Click <b>"Generate new token"</b></li>
+        <li>Under <b>Authorized Scopes</b>, check ALL boxes under <b>Devices</b></li>
+        <li>Copy the token and paste it above</li>
+      </ol>
+    </div>
+  `;
+
+  document.getElementById("tokenInput").oninput = e => { state.token = e.target.value.trim(); save(); };
+  document.getElementById("tokenInput").addEventListener("keydown", e => { if (e.key === "Enter") fetchDevices(); });
+  document.getElementById("findBtn").onclick = fetchDevices;
+  document.querySelectorAll("[data-did]").forEach(el => {
+    el.onclick = () => { state.deviceId = el.dataset.did; save(); render(); };
+  });
+  const launch = document.getElementById("launchBtn");
+  if (launch) launch.onclick = goToDashboard;
+  const manual = document.getElementById("manualDevice");
+  if (manual) manual.oninput = e => { state.deviceId = e.target.value.trim(); save(); };
+  const skip = document.getElementById("skipBtn");
+  if (skip) skip.onclick = goToDashboard;
+}
+
+function renderDashboard(el) {
+  const p = getParsed();
+  const nm = state.nightMode;
+
+  el.innerHTML = `
+    ${nm ? '<div class="ambient-glow"></div>' : ''}
+    <div style="position:relative;z-index:1">
+
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;max-width:440px;margin:0 auto;padding:32px 0 16px">
+        <h1 class="header-gradient" style="font-size:22px">${nm ? "🌙" : "❄️"} AC Control</h1>
+        <div class="flex gap-8" style="align-items:center">
+          ${p ? `<span class="status-badge ${p.on ? 'on' : 'off'}"><span class="status-dot"></span>${p.on ? 'RUNNING' : 'OFF'}</span>` : ''}
+          <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" id="settingsBtn">⚙️</button>
+        </div>
+      </div>
+
+      <!-- Status -->
+      ${p ? `
+        <div class="card fade-in">
+          <div class="flex gap-8">
+            <div class="stat-box"><div class="stat-val">${p.temp ?? "—"}°</div><div class="stat-label">Room Temp</div></div>
+            <div class="stat-box"><div class="stat-val" style="color:var(--accent)">${p.targetTemp ?? "—"}°</div><div class="stat-label">Target</div></div>
+            <div class="stat-box"><div class="stat-val">${p.humidity ?? "—"}%</div><div class="stat-label">Humidity</div></div>
+          </div>
+          <div class="flex gap-6 flex-wrap mt-8">
+            <span class="tag">Mode: ${p.mode || "—"}</span>
+            <span class="tag">Fan: ${p.fan || "—"}</span>
+            <span class="tag">Special: ${p.optionalMode || "—"}</span>
+            <span class="tag">Swing: ${p.swing || "—"}</span>
+          </div>
+        </div>
+      ` : `<div class="card text-center" style="opacity:0.6"><span class="spinner" style="border-color:rgba(139,92,246,0.3);border-top-color:var(--accent)"></span> Loading status...</div>`}
+
+      <!-- ═══ NIGHT MODE ═══ -->
+      <div class="card ${nm ? 'active-night' : ''} fade-in">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <h3 style="font-size:17px;font-weight:800">🌙 Smart Night Mode</h3>
+            <p style="font-size:12px;opacity:0.5;margin-top:4px">Power-saving sleep · 23–25°C all night</p>
+          </div>
+          ${nm ? '<span class="tag pulse" style="background:rgba(139,92,246,0.2);color:#a78bfa;font-weight:700">● ACTIVE</span>' : ''}
+        </div>
+
+        <label class="label" style="margin-bottom:8px">Select Preset</label>
+        ${Object.entries(PRESETS).map(([key, pr]) => `
+          <div class="preset ${state.selectedPreset === key ? 'selected' : ''}" data-preset="${key}">
+            <span style="font-size:22px">${pr.icon}</span>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:14px">${pr.name}</div>
+              <div style="font-size:12px;opacity:0.5">${pr.desc}</div>
+            </div>
+            <span style="font-size:20px;font-weight:800;color:${state.selectedPreset === key ? '#8b5cf6' : 'inherit'};opacity:${state.selectedPreset === key ? 1 : 0.3}">${pr.temp}°</span>
+          </div>
+        `).join("")}
+
+        <!-- Schedule -->
+        <div style="margin-top:16px;padding:14px;border-radius:14px;background:var(--stat-bg)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:13px;font-weight:700">⏰ Auto Schedule</span>
+            <button class="btn" id="scheduleToggle" style="padding:4px 14px;font-size:12px;background:${state.autoSchedule ? 'rgba(139,92,246,0.2)' : 'transparent'};color:${state.autoSchedule ? '#a78bfa' : 'var(--text-dim)'};border:1px solid ${state.autoSchedule ? 'rgba(139,92,246,0.3)' : 'var(--outline-border)'}">
+              ${state.autoSchedule ? "ON" : "OFF"}
+            </button>
+          </div>
+          <div class="flex gap-8">
+            <div class="flex-1"><label style="font-size:11px;opacity:0.5">Bedtime</label><input type="time" id="bedtimeInput" value="${state.bedtime}"></div>
+            <div class="flex-1"><label style="font-size:11px;opacity:0.5">Wake Up</label><input type="time" id="wakeInput" value="${state.wakeTime}"></div>
+          </div>
+          ${state.autoSchedule ? `<p style="font-size:11px;opacity:0.4;margin-top:8px;text-align:center">Will auto-activate at ${state.bedtime} and turn off at ${state.wakeTime}</p>` : ''}
+        </div>
+
+        <!-- Activate button -->
+        <button class="btn ${nm ? 'btn-danger' : 'btn-primary'} w-full mt-16" style="padding:14px 24px;font-size:15px" id="nightBtn" ${state.sending ? 'disabled' : ''}>
+          ${state.sending ? `<span class="spinner"></span>${state.sendingStep || 'Sending...'}` : nm ? "☀️ Deactivate Night Mode" : "🌙 Activate Night Mode"}
+        </button>
+      </div>
+
+      <!-- ═══ MANUAL ═══ -->
+      <div class="card">
+        <button class="btn btn-outline w-full" style="display:flex;justify-content:space-between;text-align:left" id="manualToggle">
+          <span>🎛️ Manual Controls</span><span>${state.showManual ? "▲" : "▼"}</span>
+        </button>
+        ${state.showManual ? `
+          <div class="mt-16 fade-in">
+            <!-- Power -->
+            <div class="flex gap-8 mb-16">
+              <button class="btn btn-on flex-1" id="cmdOn" ${state.sending ? 'disabled' : ''}>⚡ ON</button>
+              <button class="btn btn-off flex-1" id="cmdOff" ${state.sending ? 'disabled' : ''}>⏻ OFF</button>
+            </div>
+
+            <!-- Temp -->
+            <label class="label">Temperature</label>
+            <div class="flex gap-8 mt-6 mb-16" style="align-items:center">
+              <button class="btn btn-outline" style="padding:8px 16px;font-size:18px" id="tempDown">−</button>
+              <span class="temp-display">${state.customTemp}°C</span>
+              <button class="btn btn-outline" style="padding:8px 16px;font-size:18px" id="tempUp">+</button>
+            </div>
+
+            <!-- AC Mode -->
+            <label class="label">AC Mode</label>
+            <div class="flex gap-6 flex-wrap mt-6 mb-16">
+              ${["cool","heat","auto","dry","wind"].map(m => `<button class="mode-btn ${p?.mode === m ? 'active' : ''}" data-acmode="${m}">${m}</button>`).join("")}
+            </div>
+
+            <!-- Fan -->
+            <label class="label">Fan Speed</label>
+            <div class="flex gap-6 flex-wrap mt-6 mb-16">
+              ${["auto","low","medium","high","turbo"].map(m => `<button class="mode-btn ${p?.fan === m ? 'active' : ''}" data-fan="${m}">${m}</button>`).join("")}
+            </div>
+
+            <!-- Special -->
+            <label class="label">Special Mode</label>
+            <div class="flex gap-6 flex-wrap mt-6 mb-16">
+              ${["off","quiet","sleep","windFree","windFreeSleep","speed"].map(m => `<button class="mode-btn ${p?.optionalMode === m ? 'active' : ''}" data-opt="${m}">${m}</button>`).join("")}
+            </div>
+
+            <!-- Swing -->
+            <label class="label">Swing / Oscillation</label>
+            <div class="flex gap-6 flex-wrap mt-6">
+              ${["off","fixed","vertical","horizontal","all"].map(m => `<button class="mode-btn ${p?.swing === m ? 'active' : ''}" data-swing="${m}">${m}</button>`).join("")}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+
+      <!-- ═══ LOG ═══ -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <h4 style="font-size:14px;font-weight:700">📋 Activity Log</h4>
+          ${state.actionLog.length > 0 ? `<button class="btn btn-outline" style="padding:3px 10px;font-size:10px" id="clearLog">Clear</button>` : ''}
+        </div>
+        <div style="max-height:200px;overflow-y:auto">
+          ${state.actionLog.length === 0 ? '<div style="opacity:0.4;text-align:center;padding:20px">No actions yet</div>' : ''}
+          ${state.actionLog.map(e => `<div class="log-entry"><span class="log-time">${e.time}</span>${e.msg}</div>`).join("")}
+        </div>
+      </div>
+
+      <div style="text-align:center;opacity:0.3;font-size:11px;margin:20px auto;max-width:440px">
+        Samsung AR18CYLANWKN · SmartThings API v1<br>Smart Night Mode Controller
+      </div>
+    </div>
+  `;
+
+  // ─── Event listeners ───
+  document.getElementById("settingsBtn").onclick = () => {
+    state.page = "setup"; state.nightMode = false;
+    document.body.classList.remove("night");
+    clearInterval(state.pollTimer); render();
+  };
+
+  document.querySelectorAll("[data-preset]").forEach(el => {
+    el.onclick = () => { state.selectedPreset = el.dataset.preset; save(); render(); };
+  });
+
+  document.getElementById("nightBtn").onclick = () => nm ? deactivateNightMode() : activateNightMode();
+
+  document.getElementById("scheduleToggle").onclick = () => {
+    state.autoSchedule = !state.autoSchedule;
+    log(state.autoSchedule ? "⏰ Schedule ON" : "⏰ Schedule OFF");
+    startScheduleCheck(); render();
+  };
+
+  document.getElementById("bedtimeInput").onchange = e => { state.bedtime = e.target.value; save(); };
+  document.getElementById("wakeInput").onchange = e => { state.wakeTime = e.target.value; save(); };
+  document.getElementById("manualToggle").onclick = () => { state.showManual = !state.showManual; render(); };
+
+  const clearLog = document.getElementById("clearLog");
+  if (clearLog) clearLog.onclick = () => { state.actionLog = []; render(); };
+
+  // Manual controls
+  const cmdOn = document.getElementById("cmdOn");
+  const cmdOff = document.getElementById("cmdOff");
+  if (cmdOn) cmdOn.onclick = () => sendCmd("switch", "on", [], "Turn ON");
+  if (cmdOff) cmdOff.onclick = () => sendCmd("switch", "off", [], "Turn OFF");
+
+  const td = document.getElementById("tempDown");
+  const tu = document.getElementById("tempUp");
+  if (td) td.onclick = () => { state.customTemp = Math.max(16, state.customTemp - 1); render(); sendCmd("thermostatCoolingSetpoint","setCoolingSetpoint",[state.customTemp],`Temp → ${state.customTemp}°C`); };
+  if (tu) tu.onclick = () => { state.customTemp = Math.min(30, state.customTemp + 1); render(); sendCmd("thermostatCoolingSetpoint","setCoolingSetpoint",[state.customTemp],`Temp → ${state.customTemp}°C`); };
+
+  document.querySelectorAll("[data-acmode]").forEach(el => { el.onclick = () => sendCmd("airConditionerMode","setAirConditionerMode",[el.dataset.acmode],`Mode → ${el.dataset.acmode}`); });
+  document.querySelectorAll("[data-fan]").forEach(el => { el.onclick = () => sendCmd("airConditionerFanMode","setFanMode",[el.dataset.fan],`Fan → ${el.dataset.fan}`); });
+  document.querySelectorAll("[data-opt]").forEach(el => { el.onclick = () => sendCmd("custom.airConditionerOptionalMode","setAcOptionalMode",[el.dataset.opt],`Special → ${el.dataset.opt}`); });
+  document.querySelectorAll("[data-swing]").forEach(el => { el.onclick = () => sendCmd("fanOscillationMode","setFanOscillationMode",[el.dataset.swing],`Swing → ${el.dataset.swing}`); });
+}
+
+// ─── Init ───
+if (state.page === "dashboard" && state.token && state.deviceId) {
+  document.body.classList.toggle("night", state.nightMode);
+  goToDashboard();
+} else {
+  state.page = "setup";
+  render();
+}
+</script>
+</body>
+</html>
