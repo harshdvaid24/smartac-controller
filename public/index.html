@@ -196,7 +196,7 @@ const state = {
   devices: [],
   status: null,
   page: localStorage.getItem("st_token") && localStorage.getItem("st_device") ? "dashboard" : "setup",
-  nightMode: false,
+  nightMode: localStorage.getItem("smartac_dark_mode") === "1",
   selectedPreset: localStorage.getItem("st_preset") || "balanced",
   actionLog: [],
   bedtime: localStorage.getItem("st_bedtime") || "22:00",
@@ -370,6 +370,7 @@ function goToDashboard() {
 // ═══════════════════════════════════════
 
 function render() {
+  document.body.classList.toggle("night", state.nightMode);
   const app = document.getElementById("app");
   if (state.page === "setup") renderSetup(app);
   else renderDashboard(app);
@@ -462,6 +463,7 @@ function renderDashboard(el) {
         <h1 class="header-gradient" style="font-size:22px">${nm ? "🌙" : "❄️"} AC Control</h1>
         <div class="flex gap-8" style="align-items:center">
           ${p ? `<span class="status-badge ${p.on ? 'on' : 'off'}"><span class="status-dot"></span>${p.on ? 'RUNNING' : 'OFF'}</span>` : ''}
+          <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" id="themeToggle" title="Toggle dark mode">${nm ? '☀️' : '🌙'}</button>
           <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" id="settingsBtn">⚙️</button>
         </div>
       </div>
@@ -593,6 +595,16 @@ function renderDashboard(el) {
   `;
 
   // ─── Event listeners ───
+  const themeToggleEl = document.getElementById("themeToggle");
+  if (themeToggleEl) {
+    themeToggleEl.onclick = () => {
+      state.nightMode = !state.nightMode;
+      document.body.classList.toggle("night", state.nightMode);
+      localStorage.setItem("smartac_dark_mode", state.nightMode ? "1" : "0");
+      render();
+    };
+  }
+
   document.getElementById("settingsBtn").onclick = () => {
     state.page = "setup"; state.nightMode = false;
     document.body.classList.remove("night");
