@@ -9,224 +9,645 @@
 <title>SmartAC · Controller</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-  :root {
-    --bg: linear-gradient(160deg, #F0F6FF 0%, #DBEAFE 100%);
-    --card-bg: #FFFFFF;
-    --card-border: rgba(59,130,246,0.10);
-    --card-shadow: 0 4px 16px rgba(59,130,246,0.08);
-    --text: #111827;
-    --text-dim: #6B7280;
-    --accent: #3B82F6;
-    --accent-dark: #2563EB;
-    --accent-glow: rgba(59,130,246,0.25);
-    --stat-bg: #EFF6FF;
-    --success: #10B981;
-    --error: #EF4444;
-    --warning: #F59E0B;
-    --input-bg: #fff;
-    --input-border: rgba(59,130,246,0.18);
-    --outline-border: rgba(59,130,246,0.15);
-    --outline-text: #6B7280;
-    --dim-border: rgba(59,130,246,0.08);
-  }
-  body.night {
-    --bg: linear-gradient(160deg, #0F172A 0%, #1E293B 100%);
-    --card-bg: #1E293B;
-    --card-border: rgba(96,165,250,0.15);
-    --card-shadow: 0 8px 32px rgba(0,0,0,0.40);
-    --text: #F1F5F9;
-    --text-dim: #94A3B8;
-    --accent: #60A5FA;
-    --accent-dark: #3B82F6;
-    --accent-glow: rgba(96,165,250,0.30);
-    --stat-bg: rgba(96,165,250,0.08);
-    --input-bg: rgba(30,41,59,0.80);
-    --input-border: rgba(96,165,250,0.20);
-    --outline-border: rgba(96,165,250,0.20);
-    --outline-text: #F1F5F9;
-    --dim-border: rgba(96,165,250,0.08);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'DM Sans', 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    min-height: 100dvh;
-    padding: 0 16px 40px;
-    transition: background 0.8s ease, color 0.4s ease;
-  }
-  .card {
-    background: var(--card-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 24px;
-    margin: 16px auto;
-    max-width: 440px;
-    border: 1px solid var(--card-border);
-    box-shadow: var(--card-shadow);
-    transition: all 0.5s ease;
-  }
-  .card.active-night {
-    border: 2px solid rgba(96,165,250,0.5);
-    background: linear-gradient(160deg, rgba(59,130,246,0.12), rgba(37,99,235,0.06));
-  }
-  input, select {
-    width: 100%;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid var(--input-border);
-    background: var(--input-bg);
-    color: var(--text);
-    font-size: 14px;
-    outline: none;
-    margin-top: 8px;
-    font-family: 'DM Mono', monospace;
-    transition: border-color 0.2s;
-  }
-  input:focus { border-color: var(--accent); }
-  .btn {
-    padding: 12px 24px;
-    border-radius: 12px;
-    border: none;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
-  .btn:active { transform: translateY(0); }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-  .btn-primary { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; box-shadow: 0 4px 15px var(--accent-glow); }
-  .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
-  .btn-outline { background: transparent; border: 1px solid var(--outline-border); color: var(--outline-text); }
-  .btn-on { background: #34D399; color: #fff; }
-  .btn-off { background: #F87171; color: #fff; }
-  .label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; display: block; margin-bottom: 2px; }
-  .stat-box { text-align: center; padding: 12px 8px; border-radius: 14px; background: var(--stat-bg); flex: 1; transition: background 0.4s; }
-  .stat-val { font-size: 22px; font-weight: 800; }
-  .stat-label { font-size: 11px; opacity: 0.5; margin-top: 2px; }
-  .preset {
-    padding: 16px; border-radius: 14px;
-    border: 1px solid var(--outline-border);
-    cursor: pointer; transition: all 0.2s;
-    margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
-  }
-  .preset:hover { border-color: rgba(59,130,246,0.4); }
-  .preset.selected { border: 2px solid #3B82F6; background: rgba(59,130,246,0.10); }
-  .tag { font-size: 11px; padding: 4px 10px; border-radius: 8px; background: var(--stat-bg); font-weight: 600; display: inline-block; margin: 2px; }
-  .mode-btn {
-    padding: 6px 14px; font-size: 12px; border-radius: 10px;
-    border: 1px solid var(--outline-border); background: transparent;
-    color: var(--text); cursor: pointer; font-weight: 600;
-    font-family: 'DM Sans'; transition: all 0.15s;
-  }
-  .mode-btn:hover { border-color: rgba(59,130,246,0.5); }
-  .mode-btn.active { background: rgba(59,130,246,0.15); border-color: #3B82F6; color: #3B82F6; }
-  .status-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 12px; border-radius: 20px;
-    font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
-  }
-  .status-badge.on { background: rgba(52,211,153,0.15); color: #34D399; }
-  .status-badge.off { background: rgba(248,113,113,0.12); color: #F87171; }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; }
-  .status-badge.on .status-dot { background: #34D399; box-shadow: 0 0 8px #34D399; }
-  .status-badge.off .status-dot { background: #F87171; }
-  .log-entry { padding: 6px 0; border-bottom: 1px solid var(--dim-border); font-size: 12px; font-family: 'DM Mono', monospace; }
-  .log-time { opacity: 0.4; margin-right: 8px; }
-  .flex { display: flex; } .gap-8 { gap: 8px; } .gap-6 { gap: 6px; }
-  .w-full { width: 100%; } .flex-wrap { flex-wrap: wrap; }
-  .mb-16 { margin-bottom: 16px; } .mt-16 { margin-top: 16px; }
-  .mt-8 { margin-top: 8px; } .mt-6 { margin-top: 6px; }
-  .text-center { text-align: center; } .flex-1 { flex: 1; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-  .pulse { animation: pulse 2s infinite; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .fade-in { animation: fadeIn 0.3s ease-out; }
-  .ambient-glow {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle at 50% 30%, rgba(59,130,246,0.08), transparent 60%);
-    pointer-events: none; z-index: 0;
-  }
-  .header-gradient {
-    font-size: 28px; font-weight: 800; letter-spacing: -1px;
-    background: linear-gradient(135deg, #2563EB, #3B82F6);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  body.night .header-gradient {
-    background: linear-gradient(135deg, #60A5FA, #3B82F6, #DBEAFE);
-    -webkit-background-clip: text; background-clip: text;
-  }
-  .temp-display { font-size: 28px; font-weight: 800; text-align: center; flex: 1; }
-  input[type="time"] { font-size: 16px; padding: 8px 12px; }
-  body.night input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-  a { color: var(--accent); }
+/* ═══════════════════════════════════════════════
+   CSS VARIABLES & THEME
+═══════════════════════════════════════════════ */
+:root {
+  --bg: linear-gradient(160deg, #F0F6FF 0%, #DBEAFE 100%);
+  --card-bg: #FFFFFF;
+  --card-border: rgba(59,130,246,0.10);
+  --card-shadow: 0 4px 16px rgba(59,130,246,0.08);
+  --text: #111827;
+  --text-dim: #6B7280;
+  --accent: #3B82F6;
+  --accent-dark: #2563EB;
+  --accent-glow: rgba(59,130,246,0.25);
+  --stat-bg: #EFF6FF;
+  --success: #10B981;
+  --error: #EF4444;
+  --warning: #F59E0B;
+  --input-bg: #fff;
+  --input-border: rgba(59,130,246,0.18);
+  --outline-border: rgba(59,130,246,0.15);
+  --outline-text: #6B7280;
+  --dim-border: rgba(59,130,246,0.08);
+  --tab-bar-bg: rgba(255,255,255,0.95);
+  --tab-bar-border: rgba(59,130,246,0.10);
+}
+body.night {
+  --bg: linear-gradient(160deg, #0F172A 0%, #1E293B 100%);
+  --card-bg: #1E293B;
+  --card-border: rgba(96,165,250,0.15);
+  --card-shadow: 0 8px 32px rgba(0,0,0,0.40);
+  --text: #F1F5F9;
+  --text-dim: #94A3B8;
+  --accent: #60A5FA;
+  --accent-dark: #3B82F6;
+  --accent-glow: rgba(96,165,250,0.30);
+  --stat-bg: rgba(96,165,250,0.08);
+  --input-bg: rgba(30,41,59,0.80);
+  --input-border: rgba(96,165,250,0.20);
+  --outline-border: rgba(96,165,250,0.20);
+  --outline-text: #F1F5F9;
+  --dim-border: rgba(96,165,250,0.08);
+  --tab-bar-bg: rgba(15,23,42,0.97);
+  --tab-bar-border: rgba(96,165,250,0.12);
+}
 
-  /* Loading spinner */
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 50%; border-top-color: #fff; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ═══════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  transition: background 0.8s ease, color 0.4s ease;
+}
+a { color: var(--accent); }
 
-  /* Sending overlay on night button */
-  .sending-steps { margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--stat-bg); font-size: 12px; font-family: 'DM Mono', monospace; }
-  .step-done { color: #22c55e; } .step-active { color: var(--accent); } .step-pending { opacity: 0.3; }
+/* ═══════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════ */
+#app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Mobile: content + bottom tab bar */
+#main-content {
+  flex: 1;
+  padding: 0 16px 80px; /* bottom padding for tab bar */
+  overflow-y: auto;
+}
+
+/* Desktop: top nav + content */
+@media (min-width: 768px) {
+  #app-shell { flex-direction: column; }
+  #main-content { padding: 0 24px 40px; }
+}
+
+.page-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* ═══════════════════════════════════════════════
+   TAB BAR
+═══════════════════════════════════════════════ */
+#tab-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  background: var(--tab-bar-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--tab-bar-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  height: 64px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  transition: background 0.4s, border-color 0.4s;
+}
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 3px;
+  cursor: pointer;
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-item.active { color: var(--accent); }
+.tab-item .tab-icon { font-size: 20px; line-height: 1; }
+.tab-item .tab-label { font-size: 10px; }
+
+/* Desktop: show as top horizontal nav instead */
+@media (min-width: 768px) {
+  #tab-bar {
+    position: sticky;
+    top: 0;
+    bottom: auto;
+    border-top: none;
+    border-bottom: 1px solid var(--tab-bar-border);
+    height: 56px;
+    justify-content: center;
+    gap: 4px;
+    padding-bottom: 0;
+  }
+  .tab-item {
+    flex-direction: row;
+    gap: 6px;
+    flex: none;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+  .tab-item .tab-icon { font-size: 16px; }
+  .tab-item .tab-label { font-size: 13px; }
+  #main-content { padding: 0 24px 40px; }
+}
+
+/* ═══════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════ */
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 24px;
+  margin: 16px auto;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  transition: all 0.5s ease;
+}
+.card.active-night {
+  border: 2px solid rgba(96,165,250,0.5);
+  background: linear-gradient(160deg, rgba(59,130,246,0.12), rgba(37,99,235,0.06));
+}
+.card-sm {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════════ */
+input, select, textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  margin-top: 8px;
+  font-family: 'DM Mono', monospace;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input[type="time"] { font-size: 16px; padding: 8px 12px; }
+body.night input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+textarea { resize: vertical; min-height: 72px; font-family: 'DM Sans', sans-serif; }
+select { appearance: none; cursor: pointer; }
+
+/* ═══════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════ */
+.btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+.btn-primary { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; box-shadow: 0 4px 15px var(--accent-glow); }
+.btn-danger  { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
+.btn-success { background: linear-gradient(135deg, #059669, #10B981); color: #fff; box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+.btn-outline { background: transparent; border: 1px solid var(--outline-border); color: var(--outline-text); }
+.btn-on      { background: #34D399; color: #fff; }
+.btn-off     { background: #F87171; color: #fff; }
+.btn-sm      { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+.btn-xs      { padding: 4px 10px; font-size: 11px; border-radius: 7px; }
+
+/* ═══════════════════════════════════════════════
+   TYPOGRAPHY & UTILITY
+═══════════════════════════════════════════════ */
+.label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; display: block; margin-bottom: 2px; }
+.tag   { font-size: 11px; padding: 4px 10px; border-radius: 8px; background: var(--stat-bg); font-weight: 600; display: inline-block; margin: 2px; }
+.header-gradient {
+  font-size: 28px; font-weight: 800; letter-spacing: -1px;
+  background: linear-gradient(135deg, #2563EB, #3B82F6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+body.night .header-gradient {
+  background: linear-gradient(135deg, #60A5FA, #3B82F6, #DBEAFE);
+  -webkit-background-clip: text; background-clip: text;
+}
+.flex      { display: flex; }
+.flex-col  { flex-direction: column; }
+.gap-4     { gap: 4px; }
+.gap-6     { gap: 6px; }
+.gap-8     { gap: 8px; }
+.gap-12    { gap: 12px; }
+.gap-16    { gap: 16px; }
+.w-full    { width: 100%; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-1    { flex: 1; }
+.mb-4      { margin-bottom: 4px; }
+.mb-8      { margin-bottom: 8px; }
+.mb-12     { margin-bottom: 12px; }
+.mb-16     { margin-bottom: 16px; }
+.mt-4      { margin-top: 4px; }
+.mt-6      { margin-top: 6px; }
+.mt-8      { margin-top: 8px; }
+.mt-12     { margin-top: 12px; }
+.mt-16     { margin-top: 16px; }
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+.align-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.section-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.section-sub   { font-size: 13px; opacity: 0.55; margin-bottom: 16px; }
+
+/* ═══════════════════════════════════════════════
+   STAT BOXES
+═══════════════════════════════════════════════ */
+.stat-box   { text-align: center; padding: 12px 8px; border-radius: 14px; background: var(--stat-bg); flex: 1; transition: background 0.4s; }
+.stat-val   { font-size: 22px; font-weight: 800; }
+.stat-label { font-size: 11px; opacity: 0.5; margin-top: 2px; }
+.stat-grid  { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.stat-grid-4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 480px) { .stat-grid-4 { grid-template-columns: repeat(4, 1fr); } }
+
+/* ═══════════════════════════════════════════════
+   STATUS & BADGES
+═══════════════════════════════════════════════ */
+.status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+}
+.status-badge.on  { background: rgba(52,211,153,0.15); color: #34D399; }
+.status-badge.off { background: rgba(248,113,113,0.12); color: #F87171; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; }
+.status-badge.on  .status-dot { background: #34D399; box-shadow: 0 0 8px #34D399; }
+.status-badge.off .status-dot { background: #F87171; }
+
+.comfort-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+.comfort-high   { background: rgba(16,185,129,0.15); color: #10B981; }
+.comfort-medium { background: rgba(245,158,11,0.15); color: #F59E0B; }
+.comfort-low    { background: rgba(239,68,68,0.15); color: #EF4444; }
+
+/* ═══════════════════════════════════════════════
+   PRESET CARDS
+═══════════════════════════════════════════════ */
+.preset {
+  padding: 16px; border-radius: 14px;
+  border: 1px solid var(--outline-border);
+  cursor: pointer; transition: all 0.2s;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
+}
+.preset:hover     { border-color: rgba(59,130,246,0.4); }
+.preset.selected  { border: 2px solid #3B82F6; background: rgba(59,130,246,0.10); }
+
+/* Full preset cards in Presets tab */
+.preset-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s;
+}
+.preset-card:hover { border-color: rgba(59,130,246,0.35); box-shadow: 0 4px 16px var(--accent-glow); }
+.preset-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.preset-icon { font-size: 28px; flex-shrink: 0; }
+.preset-meta { flex: 1; min-width: 0; }
+.preset-name { font-size: 15px; font-weight: 700; }
+.preset-desc { font-size: 12px; opacity: 0.55; margin-top: 2px; }
+.preset-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.preset-stat  { font-size: 11px; padding: 3px 9px; border-radius: 8px; background: var(--stat-bg); font-weight: 600; }
+.preset-watt  { font-size: 12px; font-weight: 700; opacity: 0.7; margin-left: auto; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════
+   CATEGORY FILTER PILLS
+═══════════════════════════════════════════════ */
+.pill-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.pill {
+  padding: 6px 16px; border-radius: 20px;
+  border: 1px solid var(--outline-border);
+  background: transparent; color: var(--text-dim);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.pill:hover  { border-color: rgba(59,130,246,0.4); }
+.pill.active { background: rgba(59,130,246,0.12); border-color: var(--accent); color: var(--accent); }
+
+/* ═══════════════════════════════════════════════
+   MODE BUTTONS (manual controls)
+═══════════════════════════════════════════════ */
+.mode-btn {
+  padding: 6px 14px; font-size: 12px; border-radius: 10px;
+  border: 1px solid var(--outline-border); background: transparent;
+  color: var(--text); cursor: pointer; font-weight: 600;
+  font-family: 'DM Sans'; transition: all 0.15s;
+}
+.mode-btn:hover  { border-color: rgba(59,130,246,0.5); }
+.mode-btn.active { background: rgba(59,130,246,0.15); border-color: #3B82F6; color: #3B82F6; }
+
+/* ═══════════════════════════════════════════════
+   CHART
+═══════════════════════════════════════════════ */
+.chart-container {
+  position: relative;
+  height: 220px;
+  margin: 16px 0 8px;
+}
+
+/* ═══════════════════════════════════════════════
+   SCHEDULE CARDS
+═══════════════════════════════════════════════ */
+.schedule-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: all 0.2s;
+}
+.schedule-card:hover { border-color: rgba(59,130,246,0.3); }
+.schedule-info  { flex: 1; min-width: 0; }
+.schedule-name  { font-size: 14px; font-weight: 700; }
+.schedule-time  { font-size: 12px; opacity: 0.55; margin-top: 3px; font-family: 'DM Mono', monospace; }
+.schedule-days  { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.day-chip       { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background: var(--stat-bg); }
+.day-chip.on    { background: rgba(59,130,246,0.15); color: var(--accent); }
+.toggle-switch  {
+  position: relative; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--dim-border); border-radius: 11px; transition: background 0.2s;
+}
+.toggle-track::before {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; border-radius: 50%;
+  top: 3px; left: 3px;
+  background: #fff; transition: transform 0.2s;
+}
+.toggle-switch input:checked + .toggle-track { background: var(--accent); }
+.toggle-switch input:checked + .toggle-track::before { transform: translateX(18px); }
+
+/* Schedule form */
+.schedule-form { background: var(--stat-bg); border-radius: 16px; padding: 18px; margin-top: 12px; }
+.form-row { display: flex; gap: 10px; }
+.form-row > * { flex: 1; }
+.day-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.day-btn {
+  width: 36px; height: 36px; border-radius: 50%; font-size: 12px; font-weight: 700;
+  border: 1px solid var(--outline-border); background: transparent; color: var(--text-dim);
+  cursor: pointer; font-family: 'DM Sans'; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+}
+.day-btn.selected { background: rgba(59,130,246,0.15); border-color: var(--accent); color: var(--accent); }
+
+/* ═══════════════════════════════════════════════
+   AI RESULT CARD
+═══════════════════════════════════════════════ */
+.ai-result-card {
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(37,99,235,0.04));
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 16px;
+}
+.ai-result-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+.ai-param-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--dim-border); font-size: 13px; }
+.ai-param-row:last-child { border-bottom: none; }
+.ai-param-key { opacity: 0.6; font-weight: 500; }
+.ai-param-val { font-weight: 700; font-family: 'DM Mono', monospace; }
+
+.confidence-bar-wrap { height: 6px; background: var(--dim-border); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.confidence-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #3B82F6, #10B981); transition: width 0.5s ease; }
+
+.ai-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 6px var(--success); display: inline-block; }
+.ai-status-dot.offline { background: var(--error); box-shadow: none; }
+
+/* ═══════════════════════════════════════════════
+   WEATHER WIDGET
+═══════════════════════════════════════════════ */
+.weather-widget {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--stat-bg);
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+.weather-icon  { font-size: 32px; }
+.weather-info  { flex: 1; }
+.weather-temp  { font-size: 20px; font-weight: 800; }
+.weather-desc  { font-size: 12px; opacity: 0.55; margin-top: 2px; }
+.weather-stats { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; opacity: 0.6; font-family: 'DM Mono', monospace; }
+
+/* ═══════════════════════════════════════════════
+   ACTIVITY LOG
+═══════════════════════════════════════════════ */
+.log-entry { padding: 6px 0; border-bottom: 1px solid var(--dim-border); font-size: 12px; font-family: 'DM Mono', monospace; }
+.log-time   { opacity: 0.4; margin-right: 8px; }
+
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════ */
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes pulse   { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes fadeIn  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+.fade-in    { animation: fadeIn 0.3s ease-out; }
+.slide-up   { animation: slideUp 0.35s ease-out; }
+.pulse      { animation: pulse 2s infinite; }
+.spinner    { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+
+/* ═══════════════════════════════════════════════
+   AMBIENT & MISC
+═══════════════════════════════════════════════ */
+.ambient-glow {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(59,130,246,0.08), transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.temp-display { font-size: 28px; font-weight: 800; text-align: center; flex: 1; }
+.sending-steps { margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--stat-bg); font-size: 12px; font-family: 'DM Mono', monospace; }
+.step-done    { color: #22c55e; }
+.step-active  { color: var(--accent); }
+.step-pending { opacity: 0.3; }
+.divider { height: 1px; background: var(--dim-border); margin: 16px 0; }
+.empty-state { text-align: center; padding: 40px 20px; opacity: 0.5; }
+.empty-icon  { font-size: 40px; margin-bottom: 12px; }
+.empty-text  { font-size: 14px; }
+.conn-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; background: var(--stat-bg); }
+.conn-dot   { width: 6px; height: 6px; border-radius: 50%; }
+.conn-ok    { background-color: #34D399; }
+.conn-err   { background-color: #F87171; }
+
+/* Events list */
+.event-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--dim-border); align-items: flex-start; }
+.event-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.event-info { flex: 1; min-width: 0; }
+.event-name { font-size: 13px; font-weight: 600; }
+.event-time { font-size: 11px; opacity: 0.5; font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+/* Generated preset cards */
+.gen-preset-card {
+  background: var(--stat-bg);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--outline-border);
+}
+.gen-preset-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
 <div id="app"></div>
+
 <script>
-// ═══════════════════════════════════════════════
-//  Samsung AC Smart Night Mode Controller
-//  Uses /api/* proxy to bypass CORS
-// ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  SmartAC Web Controller — Full Featured
+//  Tabs: Dashboard | Presets | Analytics | Schedule | AI
+// ═══════════════════════════════════════════════════════════════
 
-const PRESETS = {
-  ultraSaver: { name: "Ultra Saver", desc: "Max savings · 25°C · WindFree Sleep · Low fan", icon: "🌙", temp: 25, mode: "cool", fan: "low", optional: "windFreeSleep", swing: "off" },
-  balanced:   { name: "Balanced",    desc: "Comfort + savings · 24°C · Quiet · Auto fan", icon: "⚖️", temp: 24, mode: "cool", fan: "auto", optional: "quiet", swing: "off" },
-  comfort:    { name: "Comfort First", desc: "Cooler · 23°C · WindFree · Horizontal swing", icon: "❄️", temp: 23, mode: "cool", fan: "auto", optional: "windFree", swing: "horizontal" },
+// ─── Night Mode Presets (used in Dashboard tab) ───
+const NIGHT_PRESETS = {
+  ultraSaver: { name: "Ultra Saver",   desc: "Max savings · 25°C · WindFree Sleep · Low fan",   icon: "🌙", temp: 25, mode: "cool", fan: "low",  optional: "windFreeSleep", swing: "off" },
+  balanced:   { name: "Balanced",      desc: "Comfort + savings · 24°C · Quiet · Auto fan",      icon: "⚖️", temp: 24, mode: "cool", fan: "auto", optional: "quiet",        swing: "off" },
+  comfort:    { name: "Comfort First", desc: "Cooler · 23°C · WindFree · Horizontal swing",      icon: "❄️", temp: 23, mode: "cool", fan: "auto", optional: "windFree",     swing: "horizontal" },
 };
 
+// ─── All Presets (Presets tab) ───
+const ALL_PRESETS = [
+  { id: "ultra_saver",  name: "Ultra Saver",   icon: "🌿", temp: 26, mode: "cool", fan: "auto",   watts: 800,  category: "efficiency", desc: "Maximum savings with comfortable cooling" },
+  { id: "balanced",     name: "Balanced",      icon: "⚖️", temp: 24, mode: "cool", fan: "medium", watts: 1200, category: "efficiency", desc: "Great balance of comfort and power usage" },
+  { id: "comfort",      name: "Comfort",       icon: "😌", temp: 22, mode: "cool", fan: "high",   watts: 1600, category: "comfort",    desc: "Prioritize comfort over energy savings" },
+  { id: "turbo_cool",   name: "Turbo Cool",    icon: "🧊", temp: 18, mode: "cool", fan: "high",   watts: 2000, category: "quick",      desc: "Maximum cooling power for quick results" },
+  { id: "sleep_mode",   name: "Sleep Mode",    icon: "🌙", temp: 25, mode: "cool", fan: "low",    watts: 700,  category: "sleep",      desc: "Quiet and energy-efficient for sleep" },
+  { id: "night_saver",  name: "Night Saver",   icon: "💤", temp: 27, mode: "auto", fan: "low",    watts: 500,  category: "sleep",      desc: "Ultra-low power overnight mode" },
+  { id: "dehumidify",   name: "Dehumidify",    icon: "💧", temp: 24, mode: "dry",  fan: "auto",   watts: 900,  category: "comfort",    desc: "Reduce humidity without overcooling" },
+  { id: "fan_only",     name: "Fan Only",      icon: "🌬️", temp: 24, mode: "fan",  fan: "medium", watts: 100,  category: "efficiency", desc: "Circulate air with minimal power" },
+  { id: "morning_fresh",name: "Morning Fresh", icon: "🌅", temp: 23, mode: "cool", fan: "high",   watts: 1400, category: "quick",      desc: "Refresh the room quickly in the morning" },
+  { id: "post_workout", name: "Post Workout",  icon: "💪", temp: 20, mode: "cool", fan: "high",   watts: 1800, category: "quick",      desc: "Rapid cool-down after exercise" },
+  { id: "smart_night",  name: "Smart Night",   icon: "🌙", temp: 25, mode: "cool", fan: "auto",   watts: 450,  category: "sleep",      desc: "AI-optimized overnight comfort" },
+];
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
 const state = {
-  token: localStorage.getItem("st_token") || "",
+  // Setup
+  token:    localStorage.getItem("st_token")  || "",
   deviceId: localStorage.getItem("st_device") || "",
-  devices: [],
-  status: null,
+  devices:  [],
   page: localStorage.getItem("st_token") && localStorage.getItem("st_device") ? "dashboard" : "setup",
+
+  // Theme
   nightMode: localStorage.getItem("smartac_dark_mode") === "1",
+
+  // Dashboard
+  status:         null,
+  actionLog:      [],
+  sending:        false,
+  sendingStep:    "",
+  loading:        false,
+  error:          "",
+  showManual:     false,
+  customTemp:     24,
+  pollTimer:      null,
+
+  // Night mode sub-state
   selectedPreset: localStorage.getItem("st_preset") || "balanced",
-  actionLog: [],
-  bedtime: localStorage.getItem("st_bedtime") || "22:00",
-  wakeTime: localStorage.getItem("st_wake") || "06:00",
-  autoSchedule: false,
-  sending: false,
-  sendingStep: "",
-  loading: false,
-  error: "",
-  showManual: false,
-  customTemp: 24,
-  pollTimer: null,
-  schedTimer: null,
+  bedtime:        localStorage.getItem("st_bedtime") || "22:00",
+  wakeTime:       localStorage.getItem("st_wake")    || "06:00",
+  autoSchedule:   false,
+  schedTimer:     null,
+  isNightActive:  false,
+
+  // Tabs
+  activeTab: "dashboard",
+  presetCategory: "all",
+
+  // Analytics
+  analytics:       null,
+  analyticsLoading: false,
+  analyticsChart:  null,
+
+  // Schedules
+  schedules:        [],
+  schedulesLoading: false,
+  showScheduleForm: false,
+  editingSchedule:  null,
+  scheduleFormDays: [],
+  scheduleDraft: {
+    name: "", onTime: "22:00", offTime: "06:00",
+    temp: 24, mode: "cool", fan: "auto", enabled: true,
+  },
+
+  // AI
+  aiInput:      "",
+  aiResult:     null,
+  aiStatus:     null,
+  aiLoading:    false,
+  aiGenerating: false,
+  generatedPresets: [],
+
+  // Weather
+  weather:        null,
+  weatherLoading: false,
+
+  // Connection
+  connStatus: null,
 };
 
+// ═══════════════════════════════════════════════
+//  PERSISTENCE
+// ═══════════════════════════════════════════════
 function save() {
-  localStorage.setItem("st_token", state.token);
-  localStorage.setItem("st_device", state.deviceId);
+  localStorage.setItem("st_token",   state.token);
+  localStorage.setItem("st_device",  state.deviceId);
   localStorage.setItem("st_bedtime", state.bedtime);
-  localStorage.setItem("st_wake", state.wakeTime);
-  localStorage.setItem("st_preset", state.selectedPreset);
+  localStorage.setItem("st_wake",    state.wakeTime);
+  localStorage.setItem("st_preset",  state.selectedPreset);
 }
 
+// ═══════════════════════════════════════════════
+//  LOGGING
+// ═══════════════════════════════════════════════
 function log(msg) {
   state.actionLog.unshift({ time: new Date().toLocaleTimeString(), msg });
   if (state.actionLog.length > 30) state.actionLog.length = 30;
-  render();
+  renderCurrentTab();
 }
 
-// ─── API calls go through our /api proxy ───
+// ═══════════════════════════════════════════════
+//  API HELPERS
+// ═══════════════════════════════════════════════
+
+// SmartThings cloud proxy (needs auth token)
 async function apiCall(method, path, body) {
   const opts = {
     method,
@@ -239,17 +660,32 @@ async function apiCall(method, path, body) {
   return data;
 }
 
+// Local/server-side API endpoints (no ST auth needed)
+async function localApi(method, path, body) {
+  const opts = { method, headers: { "Content-Type": "application/json" } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  return res.json();
+}
+
+// Send a SmartThings device command
 async function sendCmd(capability, command, args, label) {
-  state.sending = true; state.sendingStep = label; render();
+  state.sending = true; state.sendingStep = label; renderCurrentTab();
   try {
     await apiCall("POST", `/devices/${state.deviceId}/commands`, {
       commands: [{ component: "main", capability, command, arguments: args }],
     });
     log(`✓ ${label}`);
     setTimeout(fetchStatus, 1500);
-  } catch (e) { log(`✗ ${label}: ${e.message}`); }
-  state.sending = false; state.sendingStep = ""; render();
+  } catch (e) {
+    log(`✗ ${label}: ${e.message}`);
+  }
+  state.sending = false; state.sendingStep = ""; renderCurrentTab();
 }
+
+// ═══════════════════════════════════════════════
+//  DATA FETCHERS
+// ═══════════════════════════════════════════════
 
 async function fetchDevices() {
   state.loading = true; state.error = ""; render();
@@ -260,8 +696,11 @@ async function fetchDevices() {
         c.id === "airConditionerMode" || c.id === "thermostatCoolingSetpoint" || c.id === "switch"
       )
     );
-    if (state.devices.length === 0) state.error = "No AC devices found. Make sure your AC is in SmartThings app and your token has Device permissions.";
-    else if (state.devices.length === 1) state.deviceId = state.devices[0].deviceId;
+    if (state.devices.length === 0) {
+      state.error = "No AC devices found. Make sure your AC is in SmartThings app and your token has Device permissions.";
+    } else if (state.devices.length === 1) {
+      state.deviceId = state.devices[0].deviceId;
+    }
     log(`Found ${state.devices.length} AC device(s)`);
     save();
   } catch (e) {
@@ -277,46 +716,144 @@ async function fetchStatus() {
     state.status = await apiCall("GET", `/devices/${state.deviceId}/status`);
     const t = state.status?.components?.main?.thermostatCoolingSetpoint?.coolingSetpoint?.value;
     if (t) state.customTemp = t;
-    render();
+    renderCurrentTab();
   } catch (e) { console.error("Status fetch:", e); }
 }
 
+async function fetchWeather() {
+  state.weatherLoading = true;
+  try {
+    state.weather = await localApi("GET", "/api/weather?lat=28.6139&lon=77.209");
+  } catch (e) { state.weather = null; }
+  state.weatherLoading = false;
+  renderCurrentTab();
+}
+
+async function fetchConnStatus() {
+  try {
+    state.connStatus = await localApi("GET", "/api/connections/status");
+  } catch (e) { state.connStatus = null; }
+  renderCurrentTab();
+}
+
+async function fetchAnalytics() {
+  if (!state.deviceId) return;
+  state.analyticsLoading = true; renderCurrentTab();
+  try {
+    const [stats, savings, events] = await Promise.all([
+      localApi("GET", `/api/usage/stats/${state.deviceId}?period=month`),
+      localApi("GET", `/api/savings/${state.deviceId}?period=month`),
+      localApi("GET", `/api/usage/events/${state.deviceId}?limit=20`),
+    ]);
+    state.analytics = { stats, savings, events };
+  } catch (e) {
+    console.error("Analytics fetch:", e);
+    state.analytics = null;
+  }
+  state.analyticsLoading = false;
+  renderCurrentTab();
+  setTimeout(renderAnalyticsChart, 50);
+}
+
+async function fetchSchedules() {
+  if (!state.deviceId) return;
+  state.schedulesLoading = true; renderCurrentTab();
+  try {
+    const data = await localApi("GET", `/api/schedules?deviceId=${state.deviceId}`);
+    state.schedules = data.schedules || data || [];
+  } catch (e) {
+    state.schedules = [];
+  }
+  state.schedulesLoading = false; renderCurrentTab();
+}
+
+async function fetchAiStatus() {
+  try {
+    state.aiStatus = await localApi("GET", "/api/ai/status");
+  } catch (e) { state.aiStatus = null; }
+  renderCurrentTab();
+}
+
+// ═══════════════════════════════════════════════
+//  PARSED DEVICE STATUS
+// ═══════════════════════════════════════════════
 function getParsed() {
   const s = state.status;
   if (!s) return null;
   const m = s.components?.main;
   if (!m) return null;
   return {
-    on: m?.switch?.switch?.value === "on",
-    temp: m?.temperatureMeasurement?.temperature?.value,
-    targetTemp: m?.thermostatCoolingSetpoint?.coolingSetpoint?.value,
-    humidity: m?.relativeHumidityMeasurement?.humidity?.value,
-    mode: m?.airConditionerMode?.airConditionerMode?.value,
-    fan: m?.airConditionerFanMode?.fanMode?.value,
-    optionalMode: m?.["custom.airConditionerOptionalMode"]?.acOptionalMode?.value,
-    swing: m?.fanOscillationMode?.fanOscillationMode?.value,
+    on:          m?.switch?.switch?.value === "on",
+    temp:        m?.temperatureMeasurement?.temperature?.value,
+    targetTemp:  m?.thermostatCoolingSetpoint?.coolingSetpoint?.value,
+    humidity:    m?.relativeHumidityMeasurement?.humidity?.value,
+    mode:        m?.airConditionerMode?.airConditionerMode?.value,
+    fan:         m?.airConditionerFanMode?.fanMode?.value,
+    optionalMode:m?.["custom.airConditionerOptionalMode"]?.acOptionalMode?.value,
+    swing:       m?.fanOscillationMode?.fanOscillationMode?.value,
   };
 }
 
+// Comfort score calculation
+function calcComfortScore(p) {
+  if (!p || p.temp == null || p.targetTemp == null || p.humidity == null) return null;
+  const score = 100
+    - Math.abs(p.temp - p.targetTemp) * 8
+    - Math.max(0, p.humidity - 60) * 0.5
+    - Math.max(0, 45 - p.humidity) * 0.3;
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function comfortBadgeClass(score) {
+  if (score == null) return "";
+  if (score >= 75) return "comfort-high";
+  if (score >= 50) return "comfort-medium";
+  return "comfort-low";
+}
+
+function comfortLabel(score) {
+  if (score == null) return "N/A";
+  if (score >= 80) return "Excellent";
+  if (score >= 65) return "Good";
+  if (score >= 50) return "Fair";
+  return "Poor";
+}
+
+// Weather icon mapping
+function weatherIcon(code) {
+  if (!code) return "🌡️";
+  if (code >= 200 && code < 300) return "⛈️";
+  if (code >= 300 && code < 400) return "🌦️";
+  if (code >= 500 && code < 600) return "🌧️";
+  if (code >= 600 && code < 700) return "❄️";
+  if (code >= 700 && code < 800) return "🌫️";
+  if (code === 800) return "☀️";
+  if (code > 800)  return "⛅";
+  return "🌡️";
+}
+
+// ═══════════════════════════════════════════════
+//  NIGHT MODE LOGIC
+// ═══════════════════════════════════════════════
 async function activateNightMode() {
-  const preset = PRESETS[state.selectedPreset];
-  state.sending = true; state.nightMode = true;
-  document.body.classList.add("night");
-  render();
+  const preset = NIGHT_PRESETS[state.selectedPreset];
+  state.sending = true; state.isNightActive = true;
+  document.body.classList.add("night"); state.nightMode = true;
+  renderCurrentTab();
   log(`🌙 Activating Night Mode: ${preset.name}`);
 
   const steps = [
-    ["switch", "on", [], "Turn ON"],
-    ["airConditionerMode", "setAirConditionerMode", [preset.mode], `Mode → ${preset.mode}`],
-    ["thermostatCoolingSetpoint", "setCoolingSetpoint", [preset.temp], `Temp → ${preset.temp}°C`],
-    ["airConditionerFanMode", "setFanMode", [preset.fan], `Fan → ${preset.fan}`],
-    ["custom.airConditionerOptionalMode", "setAcOptionalMode", [preset.optional], `${preset.optional}`],
-    ["fanOscillationMode", "setFanOscillationMode", [preset.swing], `Swing → ${preset.swing}`],
+    ["switch",                              "on",                  [],              "Turn ON"],
+    ["airConditionerMode",                  "setAirConditionerMode",[preset.mode],  `Mode → ${preset.mode}`],
+    ["thermostatCoolingSetpoint",           "setCoolingSetpoint",   [preset.temp],  `Temp → ${preset.temp}°C`],
+    ["airConditionerFanMode",               "setFanMode",           [preset.fan],   `Fan → ${preset.fan}`],
+    ["custom.airConditionerOptionalMode",   "setAcOptionalMode",    [preset.optional],`${preset.optional}`],
+    ["fanOscillationMode",                  "setFanOscillationMode",[preset.swing], `Swing → ${preset.swing}`],
   ];
 
   try {
     for (const [cap, cmd, args, label] of steps) {
-      state.sendingStep = label; render();
+      state.sendingStep = label; renderCurrentTab();
       await apiCall("POST", `/devices/${state.deviceId}/commands`, {
         commands: [{ component: "main", capability: cap, command: cmd, arguments: args }],
       });
@@ -327,24 +864,26 @@ async function activateNightMode() {
     setTimeout(fetchStatus, 2000);
   } catch (e) {
     log(`✗ Error: ${e.message}`);
+    state.isNightActive = false;
     state.nightMode = false;
     document.body.classList.remove("night");
   }
-  state.sending = false; state.sendingStep = ""; render();
+  state.sending = false; state.sendingStep = ""; renderCurrentTab();
 }
 
 async function deactivateNightMode() {
-  state.sending = true; state.sendingStep = "Turning off..."; render();
+  state.sending = true; state.sendingStep = "Turning off..."; renderCurrentTab();
   try {
     await apiCall("POST", `/devices/${state.deviceId}/commands`, {
       commands: [{ component: "main", capability: "switch", command: "off", arguments: [] }],
     });
     log("☀️ Night Mode OFF — AC turned off");
+    state.isNightActive = false;
     state.nightMode = false;
     document.body.classList.remove("night");
     setTimeout(fetchStatus, 1500);
   } catch (e) { log(`✗ Error: ${e.message}`); }
-  state.sending = false; state.sendingStep = ""; render();
+  state.sending = false; state.sendingStep = ""; renderCurrentTab();
 }
 
 function startScheduleCheck() {
@@ -353,38 +892,269 @@ function startScheduleCheck() {
   state.schedTimer = setInterval(() => {
     const now = new Date();
     const t = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
-    if (t === state.bedtime && !state.nightMode) { log("⏰ Scheduled bedtime — activating"); activateNightMode(); }
-    if (t === state.wakeTime && state.nightMode) { log("⏰ Wake time — deactivating"); deactivateNightMode(); }
+    if (t === state.bedtime  && !state.isNightActive) { log("⏰ Scheduled bedtime — activating"); activateNightMode(); }
+    if (t === state.wakeTime && state.isNightActive)  { log("⏰ Wake time — deactivating"); deactivateNightMode(); }
   }, 30000);
 }
 
-function goToDashboard() {
-  state.page = "dashboard"; save(); render();
-  fetchStatus();
-  if (state.pollTimer) clearInterval(state.pollTimer);
-  state.pollTimer = setInterval(fetchStatus, 12000);
+// ═══════════════════════════════════════════════
+//  PRESET ACTIONS
+// ═══════════════════════════════════════════════
+async function applyPreset(preset) {
+  log(`⚡ Applying preset: ${preset.name}`);
+  try {
+    await localApi("POST", `/api/local/control/${state.deviceId}/command`, {
+      commands: [
+        { capability: "switch",                 command: "on",                   arguments: [] },
+        { capability: "airConditionerMode",      command: "setAirConditionerMode", arguments: [preset.mode] },
+        { capability: "thermostatCoolingSetpoint",command: "setCoolingSetpoint",   arguments: [preset.temp] },
+        { capability: "airConditionerFanMode",   command: "setFanMode",            arguments: [preset.fan] },
+      ],
+    });
+    log(`✓ Preset "${preset.name}" applied`);
+    setTimeout(fetchStatus, 2000);
+  } catch (e) {
+    // Fallback to SmartThings API
+    try {
+      await apiCall("POST", `/devices/${state.deviceId}/commands`, {
+        commands: [
+          { component: "main", capability: "switch",                  command: "on",                    arguments: [] },
+          { component: "main", capability: "airConditionerMode",       command: "setAirConditionerMode",  arguments: [preset.mode] },
+          { component: "main", capability: "thermostatCoolingSetpoint",command: "setCoolingSetpoint",     arguments: [preset.temp] },
+          { component: "main", capability: "airConditionerFanMode",    command: "setFanMode",             arguments: [preset.fan] },
+        ],
+      });
+      log(`✓ Preset "${preset.name}" applied via SmartThings`);
+      setTimeout(fetchStatus, 1500);
+    } catch (e2) {
+      log(`✗ Failed to apply preset: ${e2.message}`);
+    }
+  }
 }
 
-// ═══════════════════════════════════════
-//  RENDER
-// ═══════════════════════════════════════
+async function generateAiPresets() {
+  state.aiGenerating = true; renderCurrentTab();
+  try {
+    const p = getParsed();
+    const payload = {
+      deviceId: state.deviceId,
+      conditions: {
+        roomTemp:   p?.temp     ?? null,
+        humidity:   p?.humidity ?? null,
+        weather:    state.weather ?? null,
+        timeOfDay:  new Date().getHours(),
+      },
+    };
+    const result = await localApi("POST", "/api/ai/generate-presets", payload);
+    state.generatedPresets = result.presets || result || [];
+    log(`✨ AI generated ${state.generatedPresets.length} preset(s)`);
+  } catch (e) {
+    log(`✗ AI preset generation failed: ${e.message}`);
+    state.generatedPresets = [];
+  }
+  state.aiGenerating = false; renderCurrentTab();
+}
+
+// ═══════════════════════════════════════════════
+//  SCHEDULE ACTIONS
+// ═══════════════════════════════════════════════
+async function saveSchedule() {
+  const d = state.scheduleDraft;
+  if (!d.name.trim()) { alert("Please enter a schedule name."); return; }
+  const payload = {
+    deviceId: state.deviceId,
+    name:     d.name,
+    onTime:   d.onTime,
+    offTime:  d.offTime,
+    days:     state.scheduleFormDays,
+    settings: { temp: d.temp, mode: d.mode, fan: d.fan },
+    enabled:  d.enabled,
+  };
+
+  try {
+    if (state.editingSchedule) {
+      await localApi("PUT", `/api/schedules/${state.editingSchedule}`, payload);
+      log(`✓ Schedule "${d.name}" updated`);
+    } else {
+      await localApi("POST", "/api/schedules", payload);
+      log(`✓ Schedule "${d.name}" created`);
+    }
+    state.showScheduleForm = false;
+    state.editingSchedule = null;
+    resetScheduleForm();
+    await fetchSchedules();
+  } catch (e) {
+    log(`✗ Schedule save failed: ${e.message}`);
+  }
+}
+
+async function deleteSchedule(id, name) {
+  if (!confirm(`Delete schedule "${name}"?`)) return;
+  try {
+    await localApi("DELETE", `/api/schedules/${id}`);
+    log(`✓ Schedule "${name}" deleted`);
+    await fetchSchedules();
+  } catch (e) {
+    log(`✗ Delete failed: ${e.message}`);
+  }
+}
+
+async function toggleScheduleEnabled(id, enabled) {
+  try {
+    await localApi("PATCH", `/api/schedules/${id}`, { enabled });
+    log(`✓ Schedule ${enabled ? "enabled" : "disabled"}`);
+    await fetchSchedules();
+  } catch (e) {
+    log(`✗ Toggle failed: ${e.message}`);
+  }
+}
+
+function resetScheduleForm() {
+  state.scheduleDraft = { name: "", onTime: "22:00", offTime: "06:00", temp: 24, mode: "cool", fan: "auto", enabled: true };
+  state.scheduleFormDays = [];
+  state.editingSchedule = null;
+}
+
+function startEditSchedule(s) {
+  state.scheduleDraft = {
+    name:    s.name,
+    onTime:  s.onTime  || s.time || "22:00",
+    offTime: s.offTime || "06:00",
+    temp:    s.settings?.temp ?? 24,
+    mode:    s.settings?.mode ?? "cool",
+    fan:     s.settings?.fan  ?? "auto",
+    enabled: s.enabled !== false,
+  };
+  state.scheduleFormDays = s.days || [];
+  state.editingSchedule  = s.id || s._id;
+  state.showScheduleForm = true;
+  renderCurrentTab();
+}
+
+// ═══════════════════════════════════════════════
+//  AI COMMAND
+// ═══════════════════════════════════════════════
+async function sendAiCommand() {
+  if (!state.aiInput.trim()) return;
+  state.aiLoading = true; state.aiResult = null; renderCurrentTab();
+  try {
+    const result = await localApi("POST", "/api/ai/command", {
+      text:     state.aiInput,
+      deviceId: state.deviceId,
+    });
+    state.aiResult = result;
+    log(`🤖 AI: "${state.aiInput}" → ${result.action || "processed"}`);
+  } catch (e) {
+    log(`✗ AI command failed: ${e.message}`);
+    state.aiResult = { error: e.message };
+  }
+  state.aiLoading = false; renderCurrentTab();
+}
+
+async function applyAiResult() {
+  if (!state.aiResult?.parameters) return;
+  const p = state.aiResult.parameters;
+  const cmds = [];
+  if (p.power != null) cmds.push({ component: "main", capability: "switch", command: p.power ? "on" : "off", arguments: [] });
+  if (p.temperature) cmds.push({ component: "main", capability: "thermostatCoolingSetpoint", command: "setCoolingSetpoint", arguments: [p.temperature] });
+  if (p.mode)        cmds.push({ component: "main", capability: "airConditionerMode",         command: "setAirConditionerMode", arguments: [p.mode] });
+  if (p.fanSpeed)    cmds.push({ component: "main", capability: "airConditionerFanMode",       command: "setFanMode",            arguments: [p.fanSpeed] });
+
+  if (cmds.length === 0) { log("No actionable commands in AI result"); return; }
+  try {
+    await apiCall("POST", `/devices/${state.deviceId}/commands`, { commands: cmds });
+    log("✓ AI command applied");
+    setTimeout(fetchStatus, 1500);
+  } catch (e) {
+    log(`✗ AI apply failed: ${e.message}`);
+  }
+  renderCurrentTab();
+}
+
+// ═══════════════════════════════════════════════
+//  ROUTING & RENDERING
+// ═══════════════════════════════════════════════
+function renderCurrentTab() {
+  if (state.page !== "dashboard") return render();
+  const app = document.getElementById("app");
+  document.body.classList.toggle("night", state.nightMode);
+  app.innerHTML = buildShell();
+  attachTabListeners();
+
+  const content = document.getElementById("tab-content");
+  switch (state.activeTab) {
+    case "dashboard":  renderDashboardTab(content);  break;
+    case "presets":    renderPresetsTab(content);     break;
+    case "analytics":  renderAnalyticsTab(content);   setTimeout(renderAnalyticsChart, 50); break;
+    case "schedule":   renderScheduleTab(content);    break;
+    case "ai":         renderAiTab(content);          break;
+  }
+}
 
 function render() {
   document.body.classList.toggle("night", state.nightMode);
   const app = document.getElementById("app");
-  if (state.page === "setup") renderSetup(app);
-  else renderDashboard(app);
+  if (state.page === "setup") {
+    renderSetup(app);
+  } else {
+    renderCurrentTab();
+  }
 }
 
+function buildShell() {
+  const tabs = [
+    { id: "dashboard", icon: "🏠", label: "Dashboard" },
+    { id: "presets",   icon: "⚡", label: "Presets" },
+    { id: "analytics", icon: "📊", label: "Analytics" },
+    { id: "schedule",  icon: "📅", label: "Schedule" },
+    { id: "ai",        icon: "🤖", label: "AI" },
+  ];
+  const nm = state.nightMode;
+  return `
+    ${nm ? '<div class="ambient-glow"></div>' : ''}
+    <div id="app-shell" style="position:relative;z-index:1">
+      <nav id="tab-bar">
+        ${tabs.map(t => `
+          <button class="tab-item ${state.activeTab === t.id ? 'active' : ''}" data-tab="${t.id}">
+            <span class="tab-icon">${t.icon}</span>
+            <span class="tab-label">${t.label}</span>
+          </button>
+        `).join("")}
+      </nav>
+      <div id="main-content">
+        <div class="page-wrap" id="tab-content"></div>
+      </div>
+    </div>
+  `;
+}
+
+function attachTabListeners() {
+  document.querySelectorAll("[data-tab]").forEach(btn => {
+    btn.onclick = () => {
+      const tab = btn.dataset.tab;
+      if (tab === state.activeTab) return;
+      state.activeTab = tab;
+      // Load data on first visit to each tab
+      if (tab === "analytics" && !state.analytics && !state.analyticsLoading) fetchAnalytics();
+      if (tab === "schedule"  && !state.schedules.length && !state.schedulesLoading) fetchSchedules();
+      if (tab === "ai"        && !state.aiStatus) fetchAiStatus();
+      renderCurrentTab();
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  SETUP PAGE
+// ═══════════════════════════════════════════════
 function renderSetup(el) {
   el.innerHTML = `
-    <div style="text-align:center;padding:32px 0 16px">
+    <div style="text-align:center;padding:32px 16px 16px">
       <div style="font-size:48px;margin-bottom:8px">❄️</div>
       <h1 class="header-gradient">Samsung AC Controller</h1>
       <p style="font-size:13px;opacity:0.6;margin-top:6px">Smart Night Mode · AR18CYLANWKN</p>
     </div>
 
-    <div class="card fade-in">
+    <div class="card fade-in" style="max-width:480px;margin:0 auto 16px">
       <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">Setup Connection</h3>
       <p style="font-size:13px;opacity:0.6;margin-bottom:16px">Connect via SmartThings Cloud API</p>
 
@@ -424,7 +1194,7 @@ function renderSetup(el) {
       </div>
     </div>
 
-    <div class="card" style="opacity:0.7">
+    <div class="card" style="max-width:480px;margin:0 auto;opacity:0.7">
       <h4 style="font-size:14px;margin-bottom:8px">📖 Quick Setup Guide</h4>
       <ol style="padding-left:20px;font-size:13px;line-height:1.9">
         <li>Make sure your AC is connected in the <b>Samsung SmartThings</b> phone app</li>
@@ -450,204 +1220,943 @@ function renderSetup(el) {
   if (skip) skip.onclick = goToDashboard;
 }
 
-function renderDashboard(el) {
-  const p = getParsed();
-  const nm = state.nightMode;
+// ═══════════════════════════════════════════════
+//  DASHBOARD TAB
+// ═══════════════════════════════════════════════
+function renderDashboardTab(el) {
+  const p    = getParsed();
+  const nm   = state.isNightActive || state.nightMode;
+  const score = calcComfortScore(p);
 
   el.innerHTML = `
-    ${nm ? '<div class="ambient-glow"></div>' : ''}
-    <div style="position:relative;z-index:1">
+    <!-- Header -->
+    <div class="flex justify-between align-center" style="padding:24px 0 8px">
+      <h1 class="header-gradient" style="font-size:22px">${nm ? "🌙" : "❄️"} AC Control</h1>
+      <div class="flex gap-8 align-center">
+        ${p ? `<span class="status-badge ${p.on ? 'on' : 'off'}"><span class="status-dot"></span>${p.on ? 'RUNNING' : 'OFF'}</span>` : ''}
+        <button class="btn btn-outline btn-sm" id="themeToggle" title="Toggle dark mode">${nm ? '☀️' : '🌙'}</button>
+        <button class="btn btn-outline btn-sm" id="settingsBtn">⚙️</button>
+      </div>
+    </div>
 
-      <!-- Header -->
-      <div style="display:flex;justify-content:space-between;align-items:center;max-width:440px;margin:0 auto;padding:32px 0 16px">
-        <h1 class="header-gradient" style="font-size:22px">${nm ? "🌙" : "❄️"} AC Control</h1>
-        <div class="flex gap-8" style="align-items:center">
-          ${p ? `<span class="status-badge ${p.on ? 'on' : 'off'}"><span class="status-dot"></span>${p.on ? 'RUNNING' : 'OFF'}</span>` : ''}
-          <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" id="themeToggle" title="Toggle dark mode">${nm ? '☀️' : '🌙'}</button>
-          <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" id="settingsBtn">⚙️</button>
+    <!-- Weather Widget -->
+    ${renderWeatherWidget()}
+
+    <!-- Status Card -->
+    ${p ? `
+      <div class="card fade-in" style="margin:0 0 16px">
+        <div class="flex gap-8 mb-8">
+          <div class="stat-box"><div class="stat-val">${p.temp ?? "—"}°</div><div class="stat-label">Room Temp</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:var(--accent)">${p.targetTemp ?? "—"}°</div><div class="stat-label">Target</div></div>
+          <div class="stat-box"><div class="stat-val">${p.humidity ?? "—"}%</div><div class="stat-label">Humidity</div></div>
         </div>
+        <div class="flex gap-6 flex-wrap">
+          <span class="tag">Mode: ${p.mode || "—"}</span>
+          <span class="tag">Fan: ${p.fan || "—"}</span>
+          <span class="tag">Special: ${p.optionalMode || "—"}</span>
+          <span class="tag">Swing: ${p.swing || "—"}</span>
+          ${score != null ? `<span class="comfort-badge ${comfortBadgeClass(score)}">♥ Comfort: ${score} — ${comfortLabel(score)}</span>` : ""}
+        </div>
+        ${renderConnectionStatus()}
+      </div>
+    ` : `<div class="card text-center" style="margin:0 0 16px;opacity:0.6"><span class="spinner" style="border-color:rgba(59,130,246,0.3);border-top-color:var(--accent)"></span> Loading status...</div>`}
+
+    <!-- Night Mode Card -->
+    <div class="card ${nm ? 'active-night' : ''} fade-in" style="margin:0 0 16px">
+      <div class="flex justify-between align-center mb-16">
+        <div>
+          <h3 style="font-size:17px;font-weight:800">🌙 Smart Night Mode</h3>
+          <p style="font-size:12px;opacity:0.5;margin-top:4px">Power-saving sleep · 23–25°C all night</p>
+        </div>
+        ${nm ? '<span class="tag pulse" style="background:rgba(59,130,246,0.2);color:#3B82F6;font-weight:700">● ACTIVE</span>' : ''}
       </div>
 
-      <!-- Status -->
-      ${p ? `
-        <div class="card fade-in">
-          <div class="flex gap-8">
-            <div class="stat-box"><div class="stat-val">${p.temp ?? "—"}°</div><div class="stat-label">Room Temp</div></div>
-            <div class="stat-box"><div class="stat-val" style="color:var(--accent)">${p.targetTemp ?? "—"}°</div><div class="stat-label">Target</div></div>
-            <div class="stat-box"><div class="stat-val">${p.humidity ?? "—"}%</div><div class="stat-label">Humidity</div></div>
+      <label class="label" style="margin-bottom:8px">Select Preset</label>
+      ${Object.entries(NIGHT_PRESETS).map(([key, pr]) => `
+        <div class="preset ${state.selectedPreset === key ? 'selected' : ''}" data-preset="${key}">
+          <span style="font-size:22px">${pr.icon}</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px">${pr.name}</div>
+            <div style="font-size:12px;opacity:0.5">${pr.desc}</div>
           </div>
-          <div class="flex gap-6 flex-wrap mt-8">
-            <span class="tag">Mode: ${p.mode || "—"}</span>
-            <span class="tag">Fan: ${p.fan || "—"}</span>
-            <span class="tag">Special: ${p.optionalMode || "—"}</span>
-            <span class="tag">Swing: ${p.swing || "—"}</span>
-          </div>
+          <span style="font-size:20px;font-weight:800;color:${state.selectedPreset === key ? '#3B82F6' : 'inherit'};opacity:${state.selectedPreset === key ? 1 : 0.3}">${pr.temp}°</span>
         </div>
-      ` : `<div class="card text-center" style="opacity:0.6"><span class="spinner" style="border-color:rgba(59,130,246,0.3);border-top-color:var(--accent)"></span> Loading status...</div>`}
+      `).join("")}
 
-      <!-- ═══ NIGHT MODE ═══ -->
-      <div class="card ${nm ? 'active-night' : ''} fade-in">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div>
-            <h3 style="font-size:17px;font-weight:800">🌙 Smart Night Mode</h3>
-            <p style="font-size:12px;opacity:0.5;margin-top:4px">Power-saving sleep · 23–25°C all night</p>
-          </div>
-          ${nm ? '<span class="tag pulse" style="background:rgba(59,130,246,0.2);color:#3B82F6;font-weight:700">● ACTIVE</span>' : ''}
+      <!-- Auto Schedule -->
+      <div style="margin-top:16px;padding:14px;border-radius:14px;background:var(--stat-bg)">
+        <div class="flex justify-between align-center mb-8">
+          <span style="font-size:13px;font-weight:700">⏰ Auto Schedule</span>
+          <button class="btn btn-sm" id="scheduleToggle" style="background:${state.autoSchedule ? 'rgba(59,130,246,0.2)' : 'transparent'};color:${state.autoSchedule ? '#3B82F6' : 'var(--text-dim)'};border:1px solid ${state.autoSchedule ? 'rgba(59,130,246,0.3)' : 'var(--outline-border)'}">
+            ${state.autoSchedule ? "ON" : "OFF"}
+          </button>
         </div>
-
-        <label class="label" style="margin-bottom:8px">Select Preset</label>
-        ${Object.entries(PRESETS).map(([key, pr]) => `
-          <div class="preset ${state.selectedPreset === key ? 'selected' : ''}" data-preset="${key}">
-            <span style="font-size:22px">${pr.icon}</span>
-            <div style="flex:1">
-              <div style="font-weight:700;font-size:14px">${pr.name}</div>
-              <div style="font-size:12px;opacity:0.5">${pr.desc}</div>
-            </div>
-            <span style="font-size:20px;font-weight:800;color:${state.selectedPreset === key ? '#3B82F6' : 'inherit'};opacity:${state.selectedPreset === key ? 1 : 0.3}">${pr.temp}°</span>
-          </div>
-        `).join("")}
-
-        <!-- Schedule -->
-        <div style="margin-top:16px;padding:14px;border-radius:14px;background:var(--stat-bg)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span style="font-size:13px;font-weight:700">⏰ Auto Schedule</span>
-            <button class="btn" id="scheduleToggle" style="padding:4px 14px;font-size:12px;background:${state.autoSchedule ? 'rgba(59,130,246,0.2)' : 'transparent'};color:${state.autoSchedule ? '#3B82F6' : 'var(--text-dim)'};border:1px solid ${state.autoSchedule ? 'rgba(59,130,246,0.3)' : 'var(--outline-border)'}">
-              ${state.autoSchedule ? "ON" : "OFF"}
-            </button>
-          </div>
-          <div class="flex gap-8">
-            <div class="flex-1"><label style="font-size:11px;opacity:0.5">Bedtime</label><input type="time" id="bedtimeInput" value="${state.bedtime}"></div>
-            <div class="flex-1"><label style="font-size:11px;opacity:0.5">Wake Up</label><input type="time" id="wakeInput" value="${state.wakeTime}"></div>
-          </div>
-          ${state.autoSchedule ? `<p style="font-size:11px;opacity:0.4;margin-top:8px;text-align:center">Will auto-activate at ${state.bedtime} and turn off at ${state.wakeTime}</p>` : ''}
+        <div class="flex gap-8">
+          <div class="flex-1"><label style="font-size:11px;opacity:0.5">Bedtime</label><input type="time" id="bedtimeInput" value="${state.bedtime}"></div>
+          <div class="flex-1"><label style="font-size:11px;opacity:0.5">Wake Up</label><input type="time" id="wakeInput" value="${state.wakeTime}"></div>
         </div>
-
-        <!-- Activate button -->
-        <button class="btn ${nm ? 'btn-danger' : 'btn-primary'} w-full mt-16" style="padding:14px 24px;font-size:15px" id="nightBtn" ${state.sending ? 'disabled' : ''}>
-          ${state.sending ? `<span class="spinner"></span>${state.sendingStep || 'Sending...'}` : nm ? "☀️ Deactivate Night Mode" : "🌙 Activate Night Mode"}
-        </button>
+        ${state.autoSchedule ? `<p style="font-size:11px;opacity:0.4;margin-top:8px;text-align:center">Auto-activates at ${state.bedtime}, turns off at ${state.wakeTime}</p>` : ""}
       </div>
 
-      <!-- ═══ MANUAL ═══ -->
-      <div class="card">
-        <button class="btn btn-outline w-full" style="display:flex;justify-content:space-between;text-align:left" id="manualToggle">
-          <span>🎛️ Manual Controls</span><span>${state.showManual ? "▲" : "▼"}</span>
-        </button>
-        ${state.showManual ? `
-          <div class="mt-16 fade-in">
-            <!-- Power -->
-            <div class="flex gap-8 mb-16">
-              <button class="btn btn-on flex-1" id="cmdOn" ${state.sending ? 'disabled' : ''}>⚡ ON</button>
-              <button class="btn btn-off flex-1" id="cmdOff" ${state.sending ? 'disabled' : ''}>⏻ OFF</button>
-            </div>
+      <button class="btn ${nm ? 'btn-danger' : 'btn-primary'} w-full mt-16" style="padding:14px 24px;font-size:15px" id="nightBtn" ${state.sending ? 'disabled' : ''}>
+        ${state.sending ? `<span class="spinner"></span>${state.sendingStep || 'Sending...'}` : nm ? "☀️ Deactivate Night Mode" : "🌙 Activate Night Mode"}
+      </button>
+    </div>
 
-            <!-- Temp -->
-            <label class="label">Temperature</label>
-            <div class="flex gap-8 mt-6 mb-16" style="align-items:center">
-              <button class="btn btn-outline" style="padding:8px 16px;font-size:18px" id="tempDown">−</button>
-              <span class="temp-display">${state.customTemp}°C</span>
-              <button class="btn btn-outline" style="padding:8px 16px;font-size:18px" id="tempUp">+</button>
-            </div>
+    <!-- Manual Controls -->
+    <div class="card" style="margin:0 0 16px">
+      <button class="btn btn-outline w-full" style="display:flex;justify-content:space-between;text-align:left" id="manualToggle">
+        <span>🎛️ Manual Controls</span><span>${state.showManual ? "▲" : "▼"}</span>
+      </button>
+      ${state.showManual ? renderManualControls(p) : ""}
+    </div>
 
-            <!-- AC Mode -->
-            <label class="label">AC Mode</label>
-            <div class="flex gap-6 flex-wrap mt-6 mb-16">
-              ${["cool","heat","auto","dry","wind"].map(m => `<button class="mode-btn ${p?.mode === m ? 'active' : ''}" data-acmode="${m}">${m}</button>`).join("")}
-            </div>
-
-            <!-- Fan -->
-            <label class="label">Fan Speed</label>
-            <div class="flex gap-6 flex-wrap mt-6 mb-16">
-              ${["auto","low","medium","high","turbo"].map(m => `<button class="mode-btn ${p?.fan === m ? 'active' : ''}" data-fan="${m}">${m}</button>`).join("")}
-            </div>
-
-            <!-- Special -->
-            <label class="label">Special Mode</label>
-            <div class="flex gap-6 flex-wrap mt-6 mb-16">
-              ${["off","quiet","sleep","windFree","windFreeSleep","speed"].map(m => `<button class="mode-btn ${p?.optionalMode === m ? 'active' : ''}" data-opt="${m}">${m}</button>`).join("")}
-            </div>
-
-            <!-- Swing -->
-            <label class="label">Swing / Oscillation</label>
-            <div class="flex gap-6 flex-wrap mt-6">
-              ${["off","fixed","vertical","horizontal","all"].map(m => `<button class="mode-btn ${p?.swing === m ? 'active' : ''}" data-swing="${m}">${m}</button>`).join("")}
-            </div>
-          </div>
-        ` : ''}
+    <!-- Activity Log -->
+    <div class="card" style="margin:0 0 16px">
+      <div class="flex justify-between align-center mb-8">
+        <h4 style="font-size:14px;font-weight:700">📋 Activity Log</h4>
+        ${state.actionLog.length > 0 ? `<button class="btn btn-outline btn-xs" id="clearLog">Clear</button>` : ""}
       </div>
-
-      <!-- ═══ LOG ═══ -->
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <h4 style="font-size:14px;font-weight:700">📋 Activity Log</h4>
-          ${state.actionLog.length > 0 ? `<button class="btn btn-outline" style="padding:3px 10px;font-size:10px" id="clearLog">Clear</button>` : ''}
-        </div>
-        <div style="max-height:200px;overflow-y:auto">
-          ${state.actionLog.length === 0 ? '<div style="opacity:0.4;text-align:center;padding:20px">No actions yet</div>' : ''}
-          ${state.actionLog.map(e => `<div class="log-entry"><span class="log-time">${e.time}</span>${e.msg}</div>`).join("")}
-        </div>
+      <div style="max-height:200px;overflow-y:auto">
+        ${state.actionLog.length === 0
+          ? '<div style="opacity:0.4;text-align:center;padding:20px">No actions yet</div>'
+          : state.actionLog.map(e => `<div class="log-entry"><span class="log-time">${e.time}</span>${e.msg}</div>`).join("")
+        }
       </div>
+    </div>
 
-      <div style="text-align:center;opacity:0.3;font-size:11px;margin:20px auto;max-width:440px">
-        Samsung AR18CYLANWKN · SmartThings API v1<br>Smart Night Mode Controller
-      </div>
+    <div style="text-align:center;opacity:0.3;font-size:11px;padding:12px 0 20px">
+      Samsung AR18CYLANWKN · SmartThings API v1
     </div>
   `;
 
-  // ─── Event listeners ───
-  const themeToggleEl = document.getElementById("themeToggle");
-  if (themeToggleEl) {
-    themeToggleEl.onclick = () => {
-      state.nightMode = !state.nightMode;
-      document.body.classList.toggle("night", state.nightMode);
-      localStorage.setItem("smartac_dark_mode", state.nightMode ? "1" : "0");
-      render();
-    };
-  }
-
+  // Attach dashboard listeners
+  document.getElementById("themeToggle").onclick = () => {
+    state.nightMode = !state.nightMode;
+    document.body.classList.toggle("night", state.nightMode);
+    localStorage.setItem("smartac_dark_mode", state.nightMode ? "1" : "0");
+    renderCurrentTab();
+  };
   document.getElementById("settingsBtn").onclick = () => {
     state.page = "setup"; state.nightMode = false;
     document.body.classList.remove("night");
     clearInterval(state.pollTimer); render();
   };
-
   document.querySelectorAll("[data-preset]").forEach(el => {
-    el.onclick = () => { state.selectedPreset = el.dataset.preset; save(); render(); };
+    el.onclick = () => { state.selectedPreset = el.dataset.preset; save(); renderCurrentTab(); };
   });
-
   document.getElementById("nightBtn").onclick = () => nm ? deactivateNightMode() : activateNightMode();
-
   document.getElementById("scheduleToggle").onclick = () => {
     state.autoSchedule = !state.autoSchedule;
     log(state.autoSchedule ? "⏰ Schedule ON" : "⏰ Schedule OFF");
-    startScheduleCheck(); render();
+    startScheduleCheck(); renderCurrentTab();
   };
-
   document.getElementById("bedtimeInput").onchange = e => { state.bedtime = e.target.value; save(); };
-  document.getElementById("wakeInput").onchange = e => { state.wakeTime = e.target.value; save(); };
-  document.getElementById("manualToggle").onclick = () => { state.showManual = !state.showManual; render(); };
+  document.getElementById("wakeInput").onchange    = e => { state.wakeTime = e.target.value; save(); };
+  document.getElementById("manualToggle").onclick  = () => { state.showManual = !state.showManual; renderCurrentTab(); };
 
   const clearLog = document.getElementById("clearLog");
-  if (clearLog) clearLog.onclick = () => { state.actionLog = []; render(); };
+  if (clearLog) clearLog.onclick = () => { state.actionLog = []; renderCurrentTab(); };
 
-  // Manual controls
-  const cmdOn = document.getElementById("cmdOn");
+  if (state.showManual) attachManualListeners(p);
+}
+
+function renderWeatherWidget() {
+  if (state.weatherLoading) return `<div style="padding:12px;opacity:0.5;font-size:13px">Loading weather...</div>`;
+  if (!state.weather) {
+    if (!state.weatherLoading) {
+      // Trigger fetch if not started
+      setTimeout(() => { if (!state.weather && !state.weatherLoading) fetchWeather(); }, 0);
+    }
+    return "";
+  }
+  const w = state.weather;
+  const temp  = w.main?.temp     ?? w.temperature ?? "—";
+  const hum   = w.main?.humidity ?? w.humidity    ?? "—";
+  const wind  = w.wind?.speed    ?? w.windSpeed   ?? "—";
+  const desc  = w.weather?.[0]?.description ?? w.description ?? "—";
+  const code  = w.weather?.[0]?.id;
+  const icon  = weatherIcon(code);
+
+  return `
+    <div class="weather-widget fade-in">
+      <div class="weather-icon">${icon}</div>
+      <div class="weather-info">
+        <div class="weather-temp">${temp}°C <span style="font-size:13px;font-weight:500;opacity:0.6;text-transform:capitalize">${desc}</span></div>
+        <div class="weather-stats">
+          <span>💧 ${hum}%</span>
+          <span>🌬️ ${wind} m/s</span>
+          <span>📍 New Delhi</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderConnectionStatus() {
+  if (!state.connStatus) return "";
+  const cs = state.connStatus;
+  const items = [];
+  if (cs.smartthings !== undefined) items.push(`<span class="conn-badge"><span class="conn-dot ${cs.smartthings ? 'conn-ok' : 'conn-err'}"></span>SmartThings</span>`);
+  if (cs.local !== undefined)       items.push(`<span class="conn-badge"><span class="conn-dot ${cs.local       ? 'conn-ok' : 'conn-err'}"></span>Local</span>`);
+  if (cs.cloud !== undefined)       items.push(`<span class="conn-badge"><span class="conn-dot ${cs.cloud       ? 'conn-ok' : 'conn-err'}"></span>Cloud</span>`);
+  if (!items.length) return "";
+  return `<div class="flex gap-6 flex-wrap mt-8">${items.join("")}</div>`;
+}
+
+function renderManualControls(p) {
+  return `
+    <div class="mt-16 fade-in">
+      <div class="flex gap-8 mb-16">
+        <button class="btn btn-on flex-1"  id="cmdOn"  ${state.sending ? 'disabled' : ''}>⚡ ON</button>
+        <button class="btn btn-off flex-1" id="cmdOff" ${state.sending ? 'disabled' : ''}>⏻ OFF</button>
+      </div>
+
+      <label class="label">Temperature</label>
+      <div class="flex gap-8 mt-6 mb-16" style="align-items:center">
+        <button class="btn btn-outline" style="padding:8px 16px;font-size:18px" id="tempDown">−</button>
+        <span class="temp-display">${state.customTemp}°C</span>
+        <button class="btn btn-outline" style="padding:8px 16px;font-size:18px" id="tempUp">+</button>
+      </div>
+
+      <label class="label">AC Mode</label>
+      <div class="flex gap-6 flex-wrap mt-6 mb-16">
+        ${["cool","heat","auto","dry","wind"].map(m => `<button class="mode-btn ${p?.mode === m ? 'active' : ''}" data-acmode="${m}">${m}</button>`).join("")}
+      </div>
+
+      <label class="label">Fan Speed</label>
+      <div class="flex gap-6 flex-wrap mt-6 mb-16">
+        ${["auto","low","medium","high","turbo"].map(m => `<button class="mode-btn ${p?.fan === m ? 'active' : ''}" data-fan="${m}">${m}</button>`).join("")}
+      </div>
+
+      <label class="label">Special Mode</label>
+      <div class="flex gap-6 flex-wrap mt-6 mb-16">
+        ${["off","quiet","sleep","windFree","windFreeSleep","speed"].map(m => `<button class="mode-btn ${p?.optionalMode === m ? 'active' : ''}" data-opt="${m}">${m}</button>`).join("")}
+      </div>
+
+      <label class="label">Swing / Oscillation</label>
+      <div class="flex gap-6 flex-wrap mt-6">
+        ${["off","fixed","vertical","horizontal","all"].map(m => `<button class="mode-btn ${p?.swing === m ? 'active' : ''}" data-swing="${m}">${m}</button>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function attachManualListeners(p) {
+  const cmdOn  = document.getElementById("cmdOn");
   const cmdOff = document.getElementById("cmdOff");
-  if (cmdOn) cmdOn.onclick = () => sendCmd("switch", "on", [], "Turn ON");
+  if (cmdOn)  cmdOn.onclick  = () => sendCmd("switch", "on",  [], "Turn ON");
   if (cmdOff) cmdOff.onclick = () => sendCmd("switch", "off", [], "Turn OFF");
 
   const td = document.getElementById("tempDown");
   const tu = document.getElementById("tempUp");
-  if (td) td.onclick = () => { state.customTemp = Math.max(16, state.customTemp - 1); render(); sendCmd("thermostatCoolingSetpoint","setCoolingSetpoint",[state.customTemp],`Temp → ${state.customTemp}°C`); };
-  if (tu) tu.onclick = () => { state.customTemp = Math.min(30, state.customTemp + 1); render(); sendCmd("thermostatCoolingSetpoint","setCoolingSetpoint",[state.customTemp],`Temp → ${state.customTemp}°C`); };
+  if (td) td.onclick = () => {
+    state.customTemp = Math.max(16, state.customTemp - 1);
+    renderCurrentTab();
+    sendCmd("thermostatCoolingSetpoint", "setCoolingSetpoint", [state.customTemp], `Temp → ${state.customTemp}°C`);
+  };
+  if (tu) tu.onclick = () => {
+    state.customTemp = Math.min(30, state.customTemp + 1);
+    renderCurrentTab();
+    sendCmd("thermostatCoolingSetpoint", "setCoolingSetpoint", [state.customTemp], `Temp → ${state.customTemp}°C`);
+  };
 
-  document.querySelectorAll("[data-acmode]").forEach(el => { el.onclick = () => sendCmd("airConditionerMode","setAirConditionerMode",[el.dataset.acmode],`Mode → ${el.dataset.acmode}`); });
-  document.querySelectorAll("[data-fan]").forEach(el => { el.onclick = () => sendCmd("airConditionerFanMode","setFanMode",[el.dataset.fan],`Fan → ${el.dataset.fan}`); });
-  document.querySelectorAll("[data-opt]").forEach(el => { el.onclick = () => sendCmd("custom.airConditionerOptionalMode","setAcOptionalMode",[el.dataset.opt],`Special → ${el.dataset.opt}`); });
-  document.querySelectorAll("[data-swing]").forEach(el => { el.onclick = () => sendCmd("fanOscillationMode","setFanOscillationMode",[el.dataset.swing],`Swing → ${el.dataset.swing}`); });
+  document.querySelectorAll("[data-acmode]").forEach(el => { el.onclick = () => sendCmd("airConditionerMode",                "setAirConditionerMode", [el.dataset.acmode], `Mode → ${el.dataset.acmode}`); });
+  document.querySelectorAll("[data-fan]").forEach(el    => { el.onclick = () => sendCmd("airConditionerFanMode",              "setFanMode",            [el.dataset.fan],    `Fan → ${el.dataset.fan}`); });
+  document.querySelectorAll("[data-opt]").forEach(el    => { el.onclick = () => sendCmd("custom.airConditionerOptionalMode",  "setAcOptionalMode",     [el.dataset.opt],    `Special → ${el.dataset.opt}`); });
+  document.querySelectorAll("[data-swing]").forEach(el  => { el.onclick = () => sendCmd("fanOscillationMode",                 "setFanOscillationMode", [el.dataset.swing],  `Swing → ${el.dataset.swing}`); });
 }
 
-// ─── Init ───
+// ═══════════════════════════════════════════════
+//  PRESETS TAB
+// ═══════════════════════════════════════════════
+function renderPresetsTab(el) {
+  const categories = ["all", "efficiency", "comfort", "sleep", "quick"];
+  const filtered = state.presetCategory === "all"
+    ? ALL_PRESETS
+    : ALL_PRESETS.filter(p => p.category === state.presetCategory);
+
+  el.innerHTML = `
+    <div style="padding:24px 0 8px">
+      <h2 class="section-title">⚡ Presets</h2>
+      <p class="section-sub">Quick AC configurations for any situation</p>
+    </div>
+
+    <!-- Category Pills -->
+    <div class="pill-bar">
+      ${categories.map(c => `
+        <button class="pill ${state.presetCategory === c ? 'active' : ''}" data-cat="${c}">
+          ${c.charAt(0).toUpperCase() + c.slice(1)}
+        </button>
+      `).join("")}
+    </div>
+
+    <!-- Generate AI Preset Button -->
+    <button class="btn btn-primary w-full mb-16" id="genAiPresets" ${state.aiGenerating ? "disabled" : ""}>
+      ${state.aiGenerating ? '<span class="spinner"></span>Generating...' : '✨ Generate AI Preset for Current Conditions'}
+    </button>
+
+    <!-- Generated Presets -->
+    ${state.generatedPresets.length > 0 ? `
+      <div class="card fade-in" style="margin:0 0 16px">
+        <h4 style="font-size:14px;font-weight:700;margin-bottom:12px">✨ AI-Generated Presets</h4>
+        ${state.generatedPresets.map((gp, i) => `
+          <div class="gen-preset-card">
+            <div class="gen-preset-header">
+              <span style="font-size:24px">${gp.icon || "🤖"}</span>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:14px">${gp.name || "AI Preset " + (i + 1)}</div>
+                <div style="font-size:12px;opacity:0.55">${gp.description || gp.desc || ""}</div>
+              </div>
+            </div>
+            <div class="preset-stats">
+              ${gp.temp   ? `<span class="preset-stat">🌡️ ${gp.temp}°C</span>` : ""}
+              ${gp.mode   ? `<span class="preset-stat">${gp.mode}</span>` : ""}
+              ${gp.fan    ? `<span class="preset-stat">Fan: ${gp.fan}</span>` : ""}
+              ${gp.watts  ? `<span class="preset-stat">~${gp.watts}W</span>` : ""}
+            </div>
+            <button class="btn btn-primary btn-sm" data-gp-idx="${i}">Apply Preset</button>
+          </div>
+        `).join("")}
+      </div>
+    ` : ""}
+
+    <!-- Preset List -->
+    ${filtered.map(p => `
+      <div class="preset-card fade-in">
+        <div class="preset-card-header">
+          <span class="preset-icon">${p.icon}</span>
+          <div class="preset-meta">
+            <div class="preset-name">${p.name}</div>
+            <div class="preset-desc">${p.desc}</div>
+          </div>
+          <span class="preset-watt">~${p.watts}W</span>
+        </div>
+        <div class="preset-stats">
+          <span class="preset-stat">🌡️ ${p.temp}°C</span>
+          <span class="preset-stat">${p.mode}</span>
+          <span class="preset-stat">Fan: ${p.fan}</span>
+          <span class="preset-stat" style="background:${categoryColor(p.category)}">${p.category}</span>
+        </div>
+        <button class="btn btn-primary btn-sm" data-apply-preset="${p.id}">Apply</button>
+      </div>
+    `).join("")}
+  `;
+
+  // Listeners
+  document.querySelectorAll("[data-cat]").forEach(btn => {
+    btn.onclick = () => { state.presetCategory = btn.dataset.cat; renderCurrentTab(); };
+  });
+
+  document.getElementById("genAiPresets").onclick = generateAiPresets;
+
+  document.querySelectorAll("[data-apply-preset]").forEach(btn => {
+    btn.onclick = () => {
+      const preset = ALL_PRESETS.find(p => p.id === btn.dataset.applyPreset);
+      if (preset) applyPreset(preset);
+    };
+  });
+
+  document.querySelectorAll("[data-gp-idx]").forEach(btn => {
+    btn.onclick = () => {
+      const gp = state.generatedPresets[parseInt(btn.dataset.gpIdx)];
+      if (gp) applyPreset(gp);
+    };
+  });
+}
+
+function categoryColor(cat) {
+  const map = {
+    efficiency: "rgba(16,185,129,0.15)",
+    comfort:    "rgba(59,130,246,0.15)",
+    sleep:      "rgba(139,92,246,0.15)",
+    quick:      "rgba(245,158,11,0.15)",
+  };
+  return map[cat] || "var(--stat-bg)";
+}
+
+// ═══════════════════════════════════════════════
+//  ANALYTICS TAB
+// ═══════════════════════════════════════════════
+function renderAnalyticsTab(el) {
+  el.innerHTML = `
+    <div style="padding:24px 0 8px">
+      <h2 class="section-title">📊 Analytics</h2>
+      <p class="section-sub">This month's usage and savings</p>
+    </div>
+
+    ${state.analyticsLoading ? `
+      <div class="text-center" style="padding:40px;opacity:0.6">
+        <span class="spinner" style="border-color:rgba(59,130,246,0.3);border-top-color:var(--accent)"></span>
+        Loading analytics...
+      </div>
+    ` : state.analytics ? renderAnalyticsContent() : `
+      <div class="card text-center">
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <div class="empty-text">No analytics data available</div>
+          <button class="btn btn-primary mt-16" id="reloadAnalytics">Reload Analytics</button>
+        </div>
+      </div>
+    `}
+  `;
+
+  const reloadBtn = document.getElementById("reloadAnalytics");
+  if (reloadBtn) reloadBtn.onclick = fetchAnalytics;
+}
+
+function renderAnalyticsContent() {
+  const st  = state.analytics?.stats   || {};
+  const sv  = state.analytics?.savings || {};
+  const ev  = state.analytics?.events  || [];
+
+  const runtime     = st.totalRuntimeHours ?? st.runtime    ?? "—";
+  const kwh         = st.estimatedKwh      ?? st.kwh        ?? "—";
+  const costSaved   = sv.costSavings       ?? sv.savings    ?? "—";
+  const energySaved = sv.energySavedPct    ?? sv.percentage ?? "—";
+
+  return `
+    <!-- Stats Grid -->
+    <div class="stat-grid-4 mb-16">
+      <div class="stat-box">
+        <div class="stat-val" style="font-size:20px">${runtime}</div>
+        <div class="stat-label">Runtime hrs</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="font-size:20px">${kwh}</div>
+        <div class="stat-label">Est. kWh</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="font-size:20px;color:var(--success)">₹${costSaved}</div>
+        <div class="stat-label">Cost Saved</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="font-size:20px;color:var(--success)">${energySaved}%</div>
+        <div class="stat-label">Energy Saved</div>
+      </div>
+    </div>
+
+    <!-- Daily Usage Chart -->
+    <div class="card" style="margin:0 0 16px">
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:4px">Daily Usage — Last 30 Days</h4>
+      <p style="font-size:12px;opacity:0.5;margin-bottom:8px">Hours per day</p>
+      <div class="chart-container">
+        <canvas id="usageChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Recent Events -->
+    <div class="card" style="margin:0 0 16px">
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:12px">Recent Events</h4>
+      ${ev.length === 0 ? '<div class="empty-state"><div class="empty-text">No events recorded</div></div>' : ""}
+      ${ev.slice(0, 15).map(e => `
+        <div class="event-row">
+          <div class="event-icon">${eventIcon(e.type || e.event)}</div>
+          <div class="event-info">
+            <div class="event-name">${e.label || e.description || e.type || "Event"}</div>
+            <div class="event-time">${formatEventTime(e.timestamp || e.time)}</div>
+          </div>
+          ${e.value != null ? `<div style="font-size:12px;font-family:'DM Mono',monospace;opacity:0.7">${e.value}</div>` : ""}
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function eventIcon(type) {
+  if (!type) return "📌";
+  const t = type.toLowerCase();
+  if (t.includes("on"))     return "⚡";
+  if (t.includes("off"))    return "⏻";
+  if (t.includes("temp"))   return "🌡️";
+  if (t.includes("mode"))   return "🔄";
+  if (t.includes("fan"))    return "🌀";
+  if (t.includes("preset")) return "⚡";
+  if (t.includes("night"))  return "🌙";
+  return "📌";
+}
+
+function formatEventTime(ts) {
+  if (!ts) return "—";
+  try {
+    const d = new Date(ts);
+    return d.toLocaleString();
+  } catch { return ts; }
+}
+
+function renderAnalyticsChart() {
+  const canvas = document.getElementById("usageChart");
+  if (!canvas) return;
+
+  // Destroy previous chart if exists
+  if (state.analyticsChart) {
+    state.analyticsChart.destroy();
+    state.analyticsChart = null;
+  }
+
+  // Build 30 days of labels and data
+  const daily   = state.analytics?.stats?.dailyUsage || state.analytics?.stats?.daily || [];
+  const labels  = [];
+  const values  = [];
+
+  // Generate last 30 day labels
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    labels.push(`${d.getMonth() + 1}/${d.getDate()}`);
+    // Try to find matching data
+    const found = daily.find(entry => {
+      const ed = new Date(entry.date || entry.day || entry.timestamp);
+      return ed.getDate() === d.getDate() && ed.getMonth() === d.getMonth();
+    });
+    values.push(found ? (found.hours ?? found.value ?? found.usage ?? 0) : 0);
+  }
+
+  const isDark   = state.nightMode;
+  const gridCol  = isDark ? "rgba(255,255,255,0.08)"  : "rgba(0,0,0,0.06)";
+  const textCol  = isDark ? "rgba(241,245,249,0.6)"   : "rgba(17,24,39,0.6)";
+
+  state.analyticsChart = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "Runtime (hrs)",
+        data: values,
+        fill: true,
+        backgroundColor: isDark ? "rgba(96,165,250,0.12)" : "rgba(59,130,246,0.08)",
+        borderColor:     isDark ? "#60A5FA" : "#3B82F6",
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: isDark ? "#60A5FA" : "#3B82F6",
+        tension: 0.4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.parsed.y} hrs`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: textCol, font: { size: 10 }, maxTicksLimit: 10 },
+          grid:  { color: gridCol },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: textCol, font: { size: 10 } },
+          grid:  { color: gridCol },
+        },
+      },
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  SCHEDULE TAB
+// ═══════════════════════════════════════════════
+const ALL_DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+function renderScheduleTab(el) {
+  el.innerHTML = `
+    <div style="padding:24px 0 8px">
+      <div class="flex justify-between align-center">
+        <div>
+          <h2 class="section-title">📅 Schedules</h2>
+          <p class="section-sub">Automated AC control</p>
+        </div>
+        <button class="btn btn-primary btn-sm" id="addScheduleBtn">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Add/Edit Form -->
+    ${state.showScheduleForm ? renderScheduleForm() : ""}
+
+    <!-- Loading -->
+    ${state.schedulesLoading ? `
+      <div class="text-center" style="padding:30px;opacity:0.6">
+        <span class="spinner" style="border-color:rgba(59,130,246,0.3);border-top-color:var(--accent)"></span>
+        Loading schedules...
+      </div>
+    ` : ""}
+
+    <!-- Schedule List -->
+    ${!state.schedulesLoading && state.schedules.length === 0 ? `
+      <div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <div class="empty-text">No schedules yet. Add one to automate your AC.</div>
+      </div>
+    ` : ""}
+
+    ${state.schedules.map(s => renderScheduleCard(s)).join("")}
+  `;
+
+  // Listeners
+  document.getElementById("addScheduleBtn").onclick = () => {
+    state.showScheduleForm = !state.showScheduleForm;
+    if (state.showScheduleForm) { resetScheduleForm(); }
+    renderCurrentTab();
+  };
+
+  if (state.showScheduleForm) attachScheduleFormListeners();
+
+  document.querySelectorAll("[data-edit-sched]").forEach(btn => {
+    btn.onclick = () => {
+      const s = state.schedules.find(x => (x.id || x._id) === btn.dataset.editSched);
+      if (s) startEditSchedule(s);
+    };
+  });
+
+  document.querySelectorAll("[data-del-sched]").forEach(btn => {
+    const id   = btn.dataset.delSched;
+    const name = btn.dataset.delName;
+    btn.onclick = () => deleteSchedule(id, name);
+  });
+
+  document.querySelectorAll("[data-toggle-sched]").forEach(chk => {
+    chk.onchange = () => toggleScheduleEnabled(chk.dataset.toggleSched, chk.checked);
+  });
+}
+
+function renderScheduleCard(s) {
+  const id      = s.id || s._id || Math.random().toString(36).slice(2);
+  const days    = s.days || [];
+  const enabled = s.enabled !== false;
+  const onTime  = s.onTime  || s.time   || "—";
+  const offTime = s.offTime || "—";
+  const temp    = s.settings?.temp ?? s.temp ?? "—";
+  const mode    = s.settings?.mode ?? s.mode ?? "—";
+  const fan     = s.settings?.fan  ?? s.fan  ?? "—";
+
+  return `
+    <div class="schedule-card fade-in">
+      <div style="font-size:22px;flex-shrink:0">⏰</div>
+      <div class="schedule-info">
+        <div class="schedule-name">${s.name || "Unnamed Schedule"}</div>
+        <div class="schedule-time">ON: ${onTime} · OFF: ${offTime}</div>
+        <div class="flex gap-6 flex-wrap" style="margin-top:6px">
+          <span class="tag">${mode}</span>
+          <span class="tag">🌡️ ${temp}°C</span>
+          <span class="tag">Fan: ${fan}</span>
+        </div>
+        <div class="schedule-days mt-4">
+          ${ALL_DAYS.map(d => `<span class="day-chip ${days.includes(d) ? 'on' : ''}">${d}</span>`).join("")}
+        </div>
+        <div class="flex gap-6 mt-8">
+          <button class="btn btn-outline btn-xs" data-edit-sched="${id}">Edit</button>
+          <button class="btn btn-danger btn-xs" data-del-sched="${id}" data-del-name="${s.name || ''}">Delete</button>
+        </div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" ${enabled ? "checked" : ""} data-toggle-sched="${id}">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+  `;
+}
+
+function renderScheduleForm() {
+  const d = state.scheduleDraft;
+  return `
+    <div class="schedule-form slide-up">
+      <h4 style="font-size:15px;font-weight:700;margin-bottom:14px">
+        ${state.editingSchedule ? "✏️ Edit Schedule" : "➕ New Schedule"}
+      </h4>
+
+      <label class="label">Schedule Name</label>
+      <input id="sched-name" placeholder="e.g. Sleep Mode" value="${d.name}">
+
+      <div class="form-row mt-8">
+        <div>
+          <label class="label" style="margin-top:12px">On Time</label>
+          <input type="time" id="sched-on-time" value="${d.onTime}">
+        </div>
+        <div>
+          <label class="label" style="margin-top:12px">Off Time</label>
+          <input type="time" id="sched-off-time" value="${d.offTime}">
+        </div>
+      </div>
+
+      <label class="label" style="margin-top:14px">Repeat Days</label>
+      <div class="day-selector">
+        ${ALL_DAYS.map(day => `
+          <button class="day-btn ${state.scheduleFormDays.includes(day) ? 'selected' : ''}" data-day="${day}">${day.slice(0,2)}</button>
+        `).join("")}
+      </div>
+
+      <div class="form-row mt-12">
+        <div>
+          <label class="label">Temperature</label>
+          <select id="sched-temp">
+            ${Array.from({length: 15}, (_,i) => 16 + i).map(t => `<option value="${t}" ${d.temp == t ? 'selected' : ''}>${t}°C</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label class="label">Mode</label>
+          <select id="sched-mode">
+            ${["cool","heat","auto","dry","fan"].map(m => `<option value="${m}" ${d.mode === m ? 'selected' : ''}>${m}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label class="label">Fan</label>
+          <select id="sched-fan">
+            ${["auto","low","medium","high"].map(f => `<option value="${f}" ${d.fan === f ? 'selected' : ''}>${f}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+
+      <div class="flex gap-8 mt-16">
+        <button class="btn btn-primary flex-1" id="saveSchedBtn">
+          ${state.editingSchedule ? "Update Schedule" : "Create Schedule"}
+        </button>
+        <button class="btn btn-outline" id="cancelSchedBtn">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+function attachScheduleFormListeners() {
+  const nameEl    = document.getElementById("sched-name");
+  const onTimeEl  = document.getElementById("sched-on-time");
+  const offTimeEl = document.getElementById("sched-off-time");
+  const tempEl    = document.getElementById("sched-temp");
+  const modeEl    = document.getElementById("sched-mode");
+  const fanEl     = document.getElementById("sched-fan");
+
+  if (nameEl)    nameEl.oninput    = e => { state.scheduleDraft.name    = e.target.value; };
+  if (onTimeEl)  onTimeEl.onchange = e => { state.scheduleDraft.onTime  = e.target.value; };
+  if (offTimeEl) offTimeEl.onchange= e => { state.scheduleDraft.offTime = e.target.value; };
+  if (tempEl)    tempEl.onchange   = e => { state.scheduleDraft.temp    = parseInt(e.target.value); };
+  if (modeEl)    modeEl.onchange   = e => { state.scheduleDraft.mode    = e.target.value; };
+  if (fanEl)     fanEl.onchange    = e => { state.scheduleDraft.fan     = e.target.value; };
+
+  document.querySelectorAll("[data-day]").forEach(btn => {
+    btn.onclick = () => {
+      const day = btn.dataset.day;
+      if (state.scheduleFormDays.includes(day)) {
+        state.scheduleFormDays = state.scheduleFormDays.filter(d => d !== day);
+      } else {
+        state.scheduleFormDays = [...state.scheduleFormDays, day];
+      }
+      btn.classList.toggle("selected", state.scheduleFormDays.includes(day));
+    };
+  });
+
+  document.getElementById("saveSchedBtn").onclick   = saveSchedule;
+  document.getElementById("cancelSchedBtn").onclick = () => {
+    state.showScheduleForm = false;
+    state.editingSchedule  = null;
+    resetScheduleForm();
+    renderCurrentTab();
+  };
+}
+
+// ═══════════════════════════════════════════════
+//  AI TAB
+// ═══════════════════════════════════════════════
+function renderAiTab(el) {
+  const result = state.aiResult;
+  const status = state.aiStatus;
+
+  el.innerHTML = `
+    <div style="padding:24px 0 8px">
+      <div class="flex justify-between align-center">
+        <div>
+          <h2 class="section-title">🤖 AI Command</h2>
+          <p class="section-sub">Natural language AC control</p>
+        </div>
+        ${status ? `
+          <div class="flex align-center gap-6" style="font-size:12px">
+            <span class="ai-status-dot ${status.available !== false ? '' : 'offline'}"></span>
+            <span style="opacity:0.7">${status.model || (status.available !== false ? 'Online' : 'Offline')}</span>
+          </div>
+        ` : ""}
+      </div>
+    </div>
+
+    <!-- Command Input -->
+    <div class="card" style="margin:0 0 16px">
+      <label class="label" style="margin-bottom:8px">Tell the AC what to do</label>
+      <textarea id="aiInput" placeholder="e.g. 'Turn on and set to 22 degrees for sleeping' or 'Make it cooler quickly'...">${state.aiInput}</textarea>
+
+      <div class="flex gap-8 mt-12">
+        <button class="btn btn-primary flex-1" id="aiSendBtn" ${state.aiLoading || !state.aiInput.trim() ? 'disabled' : ''}>
+          ${state.aiLoading ? '<span class="spinner"></span>Processing...' : '🤖 Send Command'}
+        </button>
+        <button class="btn btn-outline btn-sm" id="aiClearBtn">Clear</button>
+      </div>
+
+      <!-- Quick Suggestions -->
+      <div class="mt-12">
+        <div class="label mb-8">Quick Commands</div>
+        <div class="flex gap-6 flex-wrap">
+          ${[
+            "Turn on cool mode at 22°C",
+            "Set sleep mode for tonight",
+            "Make it warmer by 2 degrees",
+            "Turn off AC",
+            "Set energy saving mode",
+            "Max cooling for 30 minutes",
+          ].map(s => `<button class="pill" data-quick="${s}">${s}</button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Result -->
+    ${result && !result.error ? `
+      <div class="ai-result-card slide-up">
+        <div class="ai-result-title">🤖 Parsed Command</div>
+
+        ${result.action ? `
+          <div class="ai-param-row">
+            <span class="ai-param-key">Action</span>
+            <span class="ai-param-val">${result.action}</span>
+          </div>
+        ` : ""}
+
+        ${result.confidence != null ? `
+          <div class="ai-param-row">
+            <span class="ai-param-key">Confidence</span>
+            <span class="ai-param-val">${Math.round(result.confidence * 100)}%</span>
+          </div>
+          <div class="confidence-bar-wrap">
+            <div class="confidence-bar" style="width:${Math.round(result.confidence * 100)}%"></div>
+          </div>
+        ` : ""}
+
+        ${result.parameters ? `
+          <div class="mt-8 mb-4" style="font-size:12px;font-weight:700;opacity:0.5;text-transform:uppercase;letter-spacing:1px">Parameters</div>
+          ${result.parameters.power       != null ? `<div class="ai-param-row"><span class="ai-param-key">Power</span><span class="ai-param-val">${result.parameters.power ? "ON" : "OFF"}</span></div>` : ""}
+          ${result.parameters.temperature != null ? `<div class="ai-param-row"><span class="ai-param-key">Temperature</span><span class="ai-param-val">${result.parameters.temperature}°C</span></div>` : ""}
+          ${result.parameters.mode        != null ? `<div class="ai-param-row"><span class="ai-param-key">Mode</span><span class="ai-param-val">${result.parameters.mode}</span></div>` : ""}
+          ${result.parameters.fanSpeed    != null ? `<div class="ai-param-row"><span class="ai-param-key">Fan Speed</span><span class="ai-param-val">${result.parameters.fanSpeed}</span></div>` : ""}
+        ` : ""}
+
+        ${result.explanation ? `
+          <div style="margin-top:10px;padding:10px;background:var(--stat-bg);border-radius:10px;font-size:12px;opacity:0.8">
+            💬 ${result.explanation}
+          </div>
+        ` : ""}
+
+        <button class="btn btn-success w-full mt-12" id="applyAiBtn">⚡ Apply This Command</button>
+      </div>
+    ` : result?.error ? `
+      <div style="padding:12px;background:rgba(239,68,68,0.1);border-radius:12px;color:#ef4444;font-size:13px;margin-top:12px">
+        ✗ ${result.error}
+      </div>
+    ` : ""}
+
+    <!-- Generate Smart Presets -->
+    <div class="card" style="margin:16px 0">
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:6px">✨ Smart Preset Generator</h4>
+      <p style="font-size:12px;opacity:0.55;margin-bottom:14px">AI creates custom presets based on weather, time, and your usage patterns</p>
+      <button class="btn btn-primary w-full" id="genSmartPresets" ${state.aiGenerating ? "disabled" : ""}>
+        ${state.aiGenerating ? '<span class="spinner"></span>Generating Presets...' : '✨ Generate Smart Presets'}
+      </button>
+
+      ${state.generatedPresets.length > 0 ? `
+        <div class="mt-16">
+          <div class="label mb-8">Generated Presets</div>
+          ${state.generatedPresets.map((gp, i) => `
+            <div class="gen-preset-card">
+              <div class="gen-preset-header">
+                <span style="font-size:22px">${gp.icon || "🤖"}</span>
+                <div style="flex:1">
+                  <div style="font-weight:700;font-size:14px">${gp.name || "Preset " + (i + 1)}</div>
+                  <div style="font-size:12px;opacity:0.55">${gp.description || gp.desc || ""}</div>
+                </div>
+              </div>
+              <div class="preset-stats">
+                ${gp.temp  ? `<span class="preset-stat">🌡️ ${gp.temp}°C</span>` : ""}
+                ${gp.mode  ? `<span class="preset-stat">${gp.mode}</span>` : ""}
+                ${gp.fan   ? `<span class="preset-stat">Fan: ${gp.fan}</span>` : ""}
+                ${gp.watts ? `<span class="preset-stat">~${gp.watts}W</span>` : ""}
+              </div>
+              <button class="btn btn-primary btn-sm" data-apply-gen="${i}">Apply</button>
+            </div>
+          `).join("")}
+        </div>
+      ` : ""}
+    </div>
+
+    <!-- AI Status Info -->
+    ${status ? `
+      <div class="card-sm" style="margin:0 0 16px;opacity:0.8">
+        <div class="label mb-8">AI System Info</div>
+        ${status.model    ? `<div class="ai-param-row"><span class="ai-param-key">Model</span><span class="ai-param-val" style="font-size:12px">${status.model}</span></div>` : ""}
+        ${status.version  ? `<div class="ai-param-row"><span class="ai-param-key">Version</span><span class="ai-param-val" style="font-size:12px">${status.version}</span></div>` : ""}
+        ${status.features ? `<div style="margin-top:8px;font-size:12px;opacity:0.6">${Array.isArray(status.features) ? status.features.join(' · ') : status.features}</div>` : ""}
+      </div>
+    ` : ""}
+  `;
+
+  // AI Input listener
+  const aiInputEl = document.getElementById("aiInput");
+  if (aiInputEl) {
+    aiInputEl.oninput = e => {
+      state.aiInput = e.target.value;
+      // Update send button state
+      const sendBtn = document.getElementById("aiSendBtn");
+      if (sendBtn) sendBtn.disabled = state.aiLoading || !state.aiInput.trim();
+    };
+    aiInputEl.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (state.aiInput.trim()) sendAiCommand(); }
+    });
+  }
+
+  const aiSendBtn = document.getElementById("aiSendBtn");
+  if (aiSendBtn) aiSendBtn.onclick = sendAiCommand;
+
+  const aiClearBtn = document.getElementById("aiClearBtn");
+  if (aiClearBtn) aiClearBtn.onclick = () => {
+    state.aiInput = ""; state.aiResult = null; renderCurrentTab();
+  };
+
+  document.querySelectorAll("[data-quick]").forEach(btn => {
+    btn.onclick = () => {
+      state.aiInput = btn.dataset.quick;
+      renderCurrentTab();
+      sendAiCommand();
+    };
+  });
+
+  const applyAiBtn = document.getElementById("applyAiBtn");
+  if (applyAiBtn) applyAiBtn.onclick = applyAiResult;
+
+  const genSmartBtn = document.getElementById("genSmartPresets");
+  if (genSmartBtn) genSmartBtn.onclick = generateAiPresets;
+
+  document.querySelectorAll("[data-apply-gen]").forEach(btn => {
+    btn.onclick = () => {
+      const gp = state.generatedPresets[parseInt(btn.dataset.applyGen)];
+      if (gp) applyPreset(gp);
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+function goToDashboard() {
+  state.page = "dashboard";
+  save();
+  render();
+  fetchStatus();
+  fetchWeather();
+  fetchConnStatus();
+  if (state.pollTimer) clearInterval(state.pollTimer);
+  state.pollTimer = setInterval(fetchStatus, 12000);
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
 if (state.page === "dashboard" && state.token && state.deviceId) {
   document.body.classList.toggle("night", state.nightMode);
   goToDashboard();
