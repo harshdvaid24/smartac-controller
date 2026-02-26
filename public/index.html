@@ -5,47 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#A78BFA">
+<meta name="theme-color" content="#3B82F6">
 <title>SmartAC · Controller</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: linear-gradient(160deg, #FAF8FF 0%, #EDE9FE 100%);
+    --bg: linear-gradient(160deg, #F0F6FF 0%, #DBEAFE 100%);
     --card-bg: #FFFFFF;
-    --card-border: rgba(167,139,250,0.12);
-    --card-shadow: 0 4px 16px rgba(167,139,250,0.10);
-    --text: #1F1235;
+    --card-border: rgba(59,130,246,0.10);
+    --card-shadow: 0 4px 16px rgba(59,130,246,0.08);
+    --text: #111827;
     --text-dim: #6B7280;
-    --accent: #A78BFA;
-    --accent-dark: #7C3AED;
-    --accent-glow: rgba(167,139,250,0.30);
-    --stat-bg: #F3F0FF;
-    --success: #34D399;
-    --error: #F87171;
-    --warning: #FBBF24;
+    --accent: #3B82F6;
+    --accent-dark: #2563EB;
+    --accent-glow: rgba(59,130,246,0.25);
+    --stat-bg: #EFF6FF;
+    --success: #10B981;
+    --error: #EF4444;
+    --warning: #F59E0B;
     --input-bg: #fff;
-    --input-border: rgba(167,139,250,0.20);
-    --outline-border: rgba(167,139,250,0.15);
+    --input-border: rgba(59,130,246,0.18);
+    --outline-border: rgba(59,130,246,0.15);
     --outline-text: #6B7280;
-    --dim-border: rgba(167,139,250,0.08);
+    --dim-border: rgba(59,130,246,0.08);
   }
   body.night {
-    --bg: linear-gradient(160deg, #180D35 0%, #1E1245 100%);
-    --card-bg: #2D1B69;
-    --card-border: rgba(196,181,253,0.15);
+    --bg: linear-gradient(160deg, #0F172A 0%, #1E293B 100%);
+    --card-bg: #1E293B;
+    --card-border: rgba(96,165,250,0.15);
     --card-shadow: 0 8px 32px rgba(0,0,0,0.40);
-    --text: #F5F3FF;
-    --text-dim: #9CA3AF;
-    --accent: #C4B5FD;
-    --accent-dark: #A78BFA;
-    --accent-glow: rgba(196,181,253,0.30);
-    --stat-bg: rgba(196,181,253,0.08);
-    --input-bg: rgba(45,27,105,0.50);
-    --input-border: rgba(196,181,253,0.20);
-    --outline-border: rgba(196,181,253,0.20);
-    --outline-text: #F5F3FF;
-    --dim-border: rgba(196,181,253,0.08);
+    --text: #F1F5F9;
+    --text-dim: #94A3B8;
+    --accent: #60A5FA;
+    --accent-dark: #3B82F6;
+    --accent-glow: rgba(96,165,250,0.30);
+    --stat-bg: rgba(96,165,250,0.08);
+    --input-bg: rgba(30,41,59,0.80);
+    --input-border: rgba(96,165,250,0.20);
+    --outline-border: rgba(96,165,250,0.20);
+    --outline-text: #F1F5F9;
+    --dim-border: rgba(96,165,250,0.08);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -70,8 +70,8 @@
     transition: all 0.5s ease;
   }
   .card.active-night {
-    border: 2px solid rgba(196,181,253,0.5);
-    background: linear-gradient(160deg, rgba(167,139,250,0.12), rgba(124,58,237,0.06));
+    border: 2px solid rgba(96,165,250,0.5);
+    background: linear-gradient(160deg, rgba(59,130,246,0.12), rgba(37,99,235,0.06));
   }
   input, select {
     width: 100%;
@@ -100,7 +100,7 @@
   .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
   .btn:active { transform: translateY(0); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-  .btn-primary { background: linear-gradient(135deg, #7C3AED, #A78BFA); color: #fff; box-shadow: 0 4px 15px var(--accent-glow); }
+  .btn-primary { background: linear-gradient(135deg, #2563EB, #3B82F6); color: #fff; box-shadow: 0 4px 15px var(--accent-glow); }
   .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
   .btn-outline { background: transparent; border: 1px solid var(--outline-border); color: var(--outline-text); }
   .btn-on { background: #34D399; color: #fff; }
@@ -115,8 +115,8 @@
     cursor: pointer; transition: all 0.2s;
     margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
   }
-  .preset:hover { border-color: rgba(167,139,250,0.4); }
-  .preset.selected { border: 2px solid #A78BFA; background: rgba(167,139,250,0.10); }
+  .preset:hover { border-color: rgba(59,130,246,0.4); }
+  .preset.selected { border: 2px solid #3B82F6; background: rgba(59,130,246,0.10); }
   .tag { font-size: 11px; padding: 4px 10px; border-radius: 8px; background: var(--stat-bg); font-weight: 600; display: inline-block; margin: 2px; }
   .mode-btn {
     padding: 6px 14px; font-size: 12px; border-radius: 10px;
@@ -124,8 +124,8 @@
     color: var(--text); cursor: pointer; font-weight: 600;
     font-family: 'DM Sans'; transition: all 0.15s;
   }
-  .mode-btn:hover { border-color: rgba(167,139,250,0.5); }
-  .mode-btn.active { background: rgba(167,139,250,0.15); border-color: #A78BFA; color: #A78BFA; }
+  .mode-btn:hover { border-color: rgba(59,130,246,0.5); }
+  .mode-btn.active { background: rgba(59,130,246,0.15); border-color: #3B82F6; color: #3B82F6; }
   .status-badge {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 4px 12px; border-radius: 20px;
@@ -149,16 +149,16 @@
   .fade-in { animation: fadeIn 0.3s ease-out; }
   .ambient-glow {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle at 50% 30%, rgba(167,139,250,0.08), transparent 60%);
+    background: radial-gradient(circle at 50% 30%, rgba(59,130,246,0.08), transparent 60%);
     pointer-events: none; z-index: 0;
   }
   .header-gradient {
     font-size: 28px; font-weight: 800; letter-spacing: -1px;
-    background: linear-gradient(135deg, #7C3AED, #A78BFA);
+    background: linear-gradient(135deg, #2563EB, #3B82F6);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
   body.night .header-gradient {
-    background: linear-gradient(135deg, #C4B5FD, #A78BFA, #DDD6FE);
+    background: linear-gradient(135deg, #60A5FA, #3B82F6, #DBEAFE);
     -webkit-background-clip: text; background-clip: text;
   }
   .temp-display { font-size: 28px; font-weight: 800; text-align: center; flex: 1; }
@@ -481,7 +481,7 @@ function renderDashboard(el) {
             <span class="tag">Swing: ${p.swing || "—"}</span>
           </div>
         </div>
-      ` : `<div class="card text-center" style="opacity:0.6"><span class="spinner" style="border-color:rgba(167,139,250,0.3);border-top-color:var(--accent)"></span> Loading status...</div>`}
+      ` : `<div class="card text-center" style="opacity:0.6"><span class="spinner" style="border-color:rgba(59,130,246,0.3);border-top-color:var(--accent)"></span> Loading status...</div>`}
 
       <!-- ═══ NIGHT MODE ═══ -->
       <div class="card ${nm ? 'active-night' : ''} fade-in">
@@ -490,7 +490,7 @@ function renderDashboard(el) {
             <h3 style="font-size:17px;font-weight:800">🌙 Smart Night Mode</h3>
             <p style="font-size:12px;opacity:0.5;margin-top:4px">Power-saving sleep · 23–25°C all night</p>
           </div>
-          ${nm ? '<span class="tag pulse" style="background:rgba(167,139,250,0.2);color:#A78BFA;font-weight:700">● ACTIVE</span>' : ''}
+          ${nm ? '<span class="tag pulse" style="background:rgba(59,130,246,0.2);color:#3B82F6;font-weight:700">● ACTIVE</span>' : ''}
         </div>
 
         <label class="label" style="margin-bottom:8px">Select Preset</label>
@@ -501,7 +501,7 @@ function renderDashboard(el) {
               <div style="font-weight:700;font-size:14px">${pr.name}</div>
               <div style="font-size:12px;opacity:0.5">${pr.desc}</div>
             </div>
-            <span style="font-size:20px;font-weight:800;color:${state.selectedPreset === key ? '#A78BFA' : 'inherit'};opacity:${state.selectedPreset === key ? 1 : 0.3}">${pr.temp}°</span>
+            <span style="font-size:20px;font-weight:800;color:${state.selectedPreset === key ? '#3B82F6' : 'inherit'};opacity:${state.selectedPreset === key ? 1 : 0.3}">${pr.temp}°</span>
           </div>
         `).join("")}
 
@@ -509,7 +509,7 @@ function renderDashboard(el) {
         <div style="margin-top:16px;padding:14px;border-radius:14px;background:var(--stat-bg)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
             <span style="font-size:13px;font-weight:700">⏰ Auto Schedule</span>
-            <button class="btn" id="scheduleToggle" style="padding:4px 14px;font-size:12px;background:${state.autoSchedule ? 'rgba(167,139,250,0.2)' : 'transparent'};color:${state.autoSchedule ? '#A78BFA' : 'var(--text-dim)'};border:1px solid ${state.autoSchedule ? 'rgba(167,139,250,0.3)' : 'var(--outline-border)'}">
+            <button class="btn" id="scheduleToggle" style="padding:4px 14px;font-size:12px;background:${state.autoSchedule ? 'rgba(59,130,246,0.2)' : 'transparent'};color:${state.autoSchedule ? '#3B82F6' : 'var(--text-dim)'};border:1px solid ${state.autoSchedule ? 'rgba(59,130,246,0.3)' : 'var(--outline-border)'}">
               ${state.autoSchedule ? "ON" : "OFF"}
             </button>
           </div>
