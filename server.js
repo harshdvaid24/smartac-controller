@@ -253,8 +253,8 @@ apiRouter.get("/auth/callback", async (req, res) => {
           if (window.ReactNativeWebView) {
             window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'oauth_success' }));
           }
-          // For deep-link based apps
-          try { window.location.href = 'smartac://auth/success'; } catch(e) {}
+          // For deep-link based apps — delayed so the user sees the success page briefly
+          setTimeout(() => { window.location.href = 'smartac://auth/callback?success=true'; }, 1500);
         </script>
       </body></html>
     `);
