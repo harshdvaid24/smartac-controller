@@ -168,10 +168,10 @@ const apiRouter = express.Router();
 // Step 1: Start OAuth — returns the URL the app should open in browser/webview
 apiRouter.get("/auth/login", (req, res) => {
   if (!OAUTH_CLIENT_ID) {
-    return res.status(500).json({
+    return res.status(400).json({
       error: "OAuth not configured",
-      message: "Set ST_CLIENT_ID, ST_CLIENT_SECRET env vars. Run: smartthings apps:create",
-      fallback: "Use a Personal Access Token (PAT) from https://account.smartthings.com/tokens",
+      message: "SmartThings OAuth is not configured. Use a Personal Access Token (PAT) instead.",
+      fallback: "https://account.smartthings.com/tokens",
     });
   }
   const state = Math.random().toString(36).substring(2, 15);
@@ -775,10 +775,10 @@ apiRouter.get("/geolocation", async (req, res) => {
         timezone: data.timezone,
       });
     }
-    // Fallback: default to Delhi
-    res.json({ city: "New Delhi", region: "Delhi", country: "India", lat: 28.6139, lon: 77.209, timezone: "Asia/Kolkata" });
+    // IP geolocation failed — return empty instead of hardcoded location
+    res.status(503).json({ error: "geolocation_unavailable", city: null, lat: null, lon: null });
   } catch (e) {
-    res.json({ city: "New Delhi", region: "Delhi", country: "India", lat: 28.6139, lon: 77.209, timezone: "Asia/Kolkata" });
+    res.status(503).json({ error: "geolocation_unavailable", message: e.message, city: null, lat: null, lon: null });
   }
 });
 
@@ -809,14 +809,16 @@ apiRouter.post("/ai/command", async (req, res) => {
 apiRouter.get("/ai/status", async (req, res) => {
   try {
     const ollamaOk = await nlpController.checkOllamaStatus();
+    const hasGemini = !!process.env.GEMINI_API_KEY;
     res.json({
-      ollama: ollamaOk,
-      gemini: !!process.env.GEMINI_API_KEY,
-      nlp: ollamaOk,
-      version: "7.0",
+      ollama: ollamaOk.online || false,
+      gemini: hasGemini,
+      nlp: (ollamaOk.online || false) || hasGemini,
+      version: "7.1",
     });
   } catch (e) {
-    res.json({ ollama: false, gemini: false, nlp: false, version: "7.0" });
+    const hasGemini = !!process.env.GEMINI_API_KEY;
+    res.json({ ollama: false, gemini: hasGemini, nlp: hasGemini, version: "7.1" });
   }
 });
 
